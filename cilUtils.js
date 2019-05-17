@@ -3,7 +3,7 @@ const rpc = require('jayson/promise');
 const factory = require('chain-in-law');
 
 // на сколько частей побить сумму (для того, чтобы не ждать стабильности блоков)
-const numOfOutputs = 20;
+const NUM_OF_OUTPUTS = 20;
 
 class CilUtils {
     constructor(options) {
@@ -24,7 +24,7 @@ class CilUtils {
         });
     }
 
-    async faucet(strAddress, amount, numOfOutputs = numOfOutputs) {
+    async faucet(strAddress, amount, numOfOutputs = NUM_OF_OUTPUTS) {
 
         // Адрес куда слать (можно сгенерить с помощью generateWallet.js)
         const tx = await this.createTxWithFunds(strAddress, amount, numOfOutputs);
