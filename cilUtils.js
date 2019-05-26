@@ -66,19 +66,15 @@ class CilUtils {
     }
 
     async sendTx(tx) {
-        const result = await this._client.request('sendRawTx', {"strTx": tx.encode().toString('hex')});
-        if (result.error) {
-            throw new Error(result.error.message);
-        }
+        await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
         console.log(`Funded in ${tx.getHash()}`);
     }
 
     async getUtxos(strAddress) {
-        const {result} = await this._client.request(
+        return await this.queryRpcMethod(
             'walletListUnspent',
             {strAddress: strAddress, bStableOnly: true}
         );
-        return result;
     }
 
     /**
@@ -143,6 +139,15 @@ class CilUtils {
         }
 
         return gathered;
+    }
+
+    async queryRpcMethod(strName, objParams) {
+        const res = await this._client.request(
+            strName,
+            objParams
+        );
+        if (res.error) throw res.error;
+        if (res.result) return res.result;
     }
 }
 

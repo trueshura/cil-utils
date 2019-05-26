@@ -1,9 +1,14 @@
 'use strict';
 
 const {describe, it} = require('mocha');
-const {assert} = require('chai');
+const chai = require('chai');
 const sinon = require('sinon');
 const CilUtils = require('../cilUtils');
+const chaiProm = require('chai-as-promised');
+
+chai.use(chaiProm);
+const {assert} = chai;
+
 
 const sleep = (delay) => {
     return new Promise(resolve => {
@@ -109,5 +114,29 @@ describe('CilUtils', () => {
         assert.isOk(tx);
         assert.equal(tx.inputs.length, 1);
         assert.equal(tx.outputs.length, 1);
+    });
+
+    it('should successfully send tx', async () => {
+        utils._client.request = sinon.fake.resolves({result: 'some data'});
+        const fakeTx = {encode: () => 'fake', getHash: () => 'fakeHash'};
+        await utils.sendTx(fakeTx);
+    });
+
+    it('should FAIL to send tx', async () => {
+        utils._client.request = sinon.fake.resolves({error: 'some error'});
+        const fakeTx = {encode: () => 'fake'};
+        return assert.isRejected(utils.sendTx(fakeTx));
+    });
+
+    it('should successfully get getUtxos', async () => {
+        const result = 'some data';
+        utils._client.request = sinon.fake.resolves({result});
+        const res = await utils.getUtxos();
+        assert.equal(res, result);
+    });
+
+    it('should FAIL to get getUtxos', async () => {
+        utils._client.request = sinon.fake.resolves({error: 'some error'});
+        return assert.isRejected(utils.getUtxos());
     });
 });
