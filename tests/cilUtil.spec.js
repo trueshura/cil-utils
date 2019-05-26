@@ -81,4 +81,33 @@ describe('CilUtils', () => {
         assert.equal(tx.inputs.length, 1);
         assert.equal(tx.outputs.length, 6);
     });
+
+    it('should createTxInvokeContract', async () => {
+        utils._client.request = sinon.fake.resolves({
+            "result": [
+                {
+                    "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
+                    "nOut": 1,
+                    "amount": 499986000,
+                    "isStable": true
+                },
+                {
+                    "hash": "21e8bdbee170964d36fcabe4e071bc14933551b9c2b031770ce73ba973bc4dd7",
+                    "nOut": 1,
+                    "amount": 499986000,
+                    "isStable": true
+                }]
+        });
+
+        const tx = await utils.createTxInvokeContract(
+            'Ux1ac4cfe96bd4e2a3df3d5115b75557b9f05d4b86',
+            {
+                method: 'method',
+                arrArguments: []
+            }
+        );
+        assert.isOk(tx);
+        assert.equal(tx.inputs.length, 1);
+        assert.equal(tx.outputs.length, 1);
+    });
 });
