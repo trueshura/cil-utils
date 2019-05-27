@@ -71,6 +71,8 @@ class CilUtils {
     }
 
     async getUtxos(strAddress) {
+        strAddress = strAddress || this._kpFunds.address;
+
         return await this.queryRpcMethod(
             'walletListUnspent',
             {strAddress: strAddress, bStableOnly: true}
@@ -133,7 +135,7 @@ class CilUtils {
      * @private
      */
     async _addInputs(tx, nAmountNeeded) {
-        const arrUtxos = await this.getUtxos(this._kpFunds.address);
+        const arrUtxos = await this.getUtxos();
         const {arrCoins, gathered} = this._gatherInputsForAmount(arrUtxos, nAmountNeeded);
 
         for (let input of arrCoins) {
