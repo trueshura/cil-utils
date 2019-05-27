@@ -103,6 +103,8 @@ class CilUtils {
     }
 
     async createTxInvokeContract(strAddress, objInvokeCode, fee) {
+        await this._loadedPromise;
+
         strAddress = this.stripAddressPrefix(strAddress);
 
         const tx = factory.Transaction.invokeContract(
