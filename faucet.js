@@ -1,20 +1,13 @@
 const assert = require('assert');
 const commandLineArgs = require('command-line-args');
+const readline = require('readline');
+
 const CilUtils = require('./cilUtils');
 const Config = require('./config');
 
 // Читаем опции
 const options = readCmdLineOptions();
-const {receiverAddr, amount, nOutputs} = options;
-
-assert(options.fundsPk, 'Specify --fundsPk');
-assert(receiverAddr, 'Specify --receiverAddr');
-assert(amount, 'Specify --amount');
-
-const utils = new CilUtils({
-    ...options,
-    privateKey: fundsPk
-});
+let {fundsPk, receiverAddr, amount, nOutputs} = options;
 
 main()
     .then(() => {
@@ -29,6 +22,18 @@ main()
 // ----------------------------
 
 async function main() {
+    if (!fundsPk) fundsPk = await questionAsync('Enter PK with funds:', true);
+    if (!receiverAddr) receiverAddr = await questionAsync('Enter receiver address:', false);
+    if (!amount) amount = parseFloat(await questionAsync('Enter amount:', false));
+
+    assert(fundsPk, 'Specify --fundsPk');
+    assert(receiverAddr, 'Specify --receiverAddr');
+    assert(amount, 'Specify --amount');
+
+    const utils = new CilUtils({
+        ...options,
+        privateKey: fundsPk
+    });
     await utils.faucet(receiverAddr, amount, nOutputs);
 }
 
@@ -52,4 +57,22 @@ function readCmdLineOptions() {
         {name: "nOutputs", type: Number, multiple: false, defaultValue: DEFAULT_NUM_OUTPUTS}
     ];
     return commandLineArgs(optionDefinitions, {camelCase: true});
+}
+
+function questionAsync(prompt, password = false) {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise(resolve => {
+        rl.question(prompt, answer => {
+            rl.close();
+            if (password) {
+                if (process.stdout.moveCursor) process.stdout.moveCursor(0, -1);
+                if (process.stdout.clearLine) process.stdout.clearLine();
+            }
+            resolve(answer.trim());
+        });
+    });
 }

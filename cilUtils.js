@@ -20,7 +20,7 @@ class CilUtils {
             .then(_ => {
                 this._nFeeDeploy = nFeeDeploy || factory.Constants.fees.CONTRACT_CREATION_FEE;
                 this._nFeeInvoke = nFeeInvoke || factory.Constants.fees.CONTRACT_INVOCATION_FEE;
-                this._nFeePerInputOutput = nFeePerInputOutput || factory.Constants.fees.TX_FEE * 0, 12;
+                this._nFeePerInputOutput = nFeePerInputOutput || factory.Constants.fees.TX_FEE * 0.12;
             })
             .catch(err => {
                 console.error(err);
