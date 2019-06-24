@@ -63,11 +63,12 @@ describe('CilUtils', () => {
         assert.equal(result.length, 2);
     });
 
-    describe('createTxWithFunds', async () => {
-        it('should be two input and change', async () => {
-            const amount = 499986000;
-            const nOutputs = 20;
-            const arrCoins = [
+    describe('gatherInputsForAmount', () => {
+        let arrUtxos;
+        const amount = 499986000;
+
+        beforeEach(() => {
+            arrUtxos = [
                 {
                     "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
                     "nOut": 1,
@@ -80,20 +81,55 @@ describe('CilUtils', () => {
                     "amount": amount,
                     "isStable": true
                 }];
-
-            const tx = await utils.createTxWithFunds({
-                arrCoins,
-                gatheredAmount: arrCoins.reduce((accum, current) => accum += current.amount, 0),
-                receiverAddr: 'Ux1ac4cfe96bd4e2a3df3d5115b75557b9f05d4b86',
-                amount,
-                nOutputs: 20,
-                manualFee: 1
-            });
-
-            assert.isOk(tx);
-            assert.equal(tx.inputs.length, 2);
-            assert.equal(tx.outputs.length, nOutputs + 1);
         });
+        it('should use one utxo (fee)', async () => {
+            const {arrCoins, gathered} = utils.gatherInputsForAmount(arrUtxos, amount / 2);
+
+            assert.equal(arrCoins.length, 1);
+            assert.equal(gathered, amount);
+        });
+
+        it('should use both utxo (fee)', async () => {
+            const {arrCoins, gathered} = utils.gatherInputsForAmount(arrUtxos, amount);
+
+            assert.equal(arrCoins.length, 2);
+            assert.equal(gathered, 2 * amount);
+        });
+
+        it('should throw (fee)', async () => {
+            assert.throws(() => utils.gatherInputsForAmount(arrUtxos, 2 * amount), 'Not enough coins!');
+        });
+    });
+
+    it('should createTxWithFunds (two input and change)', async () => {
+        const amount = 499986000;
+        const nOutputs = 20;
+        const arrCoins = [
+            {
+                "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
+                "nOut": 1,
+                "amount": amount,
+                "isStable": true
+            },
+            {
+                "hash": "21e8bdbee170964d36fcabe4e071bc14933551b9c2b031770ce73ba973bc4dd7",
+                "nOut": 1,
+                "amount": amount,
+                "isStable": true
+            }];
+
+        const tx = await utils.createTxWithFunds({
+            arrCoins,
+            gatheredAmount: arrCoins.reduce((accum, current) => accum += current.amount, 0),
+            receiverAddr: 'Ux1ac4cfe96bd4e2a3df3d5115b75557b9f05d4b86',
+            amount,
+            nOutputs: 20,
+            manualFee: 1
+        });
+
+        assert.isOk(tx);
+        assert.equal(tx.inputs.length, 2);
+        assert.equal(tx.outputs.length, nOutputs + 1);
     });
 
     it('should createTxInvokeContract', async () => {
