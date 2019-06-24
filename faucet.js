@@ -7,7 +7,7 @@ const Config = require('./config');
 
 // Читаем опции
 const options = readCmdLineOptions();
-let {fundsPk, receiverAddr, amount, nOutputs} = options;
+let {fundsPk, receiverAddr, amount, nOutputs, justCreateTx} = options;
 
 main()
     .then(() => {
@@ -34,7 +34,15 @@ async function main() {
         ...options,
         privateKey: fundsPk
     });
-    await utils.faucet(receiverAddr, amount, nOutputs);
+
+    const tx = await utils.createTxWithFunds(receiverAddr, amount, nOutputs);
+    if (justCreateTx) {
+        console.log(`Here is your tx: "${tx.encode().toString('hex')}"`);
+        console.log(`You can send it via RPC.sendRawTx call`);
+    } else {
+        await utils.sendTx(tx);
+        console.log(`Tx ${tx.getHash()} successfully sent`);
+    }
 }
 
 function readCmdLineOptions() {
@@ -54,7 +62,8 @@ function readCmdLineOptions() {
         {name: "fundsPk", type: String, multiple: false},
         {name: "receiverAddr", type: String, multiple: false},
         {name: "amount", type: Number, multiple: false},
-        {name: "nOutputs", type: Number, multiple: false, defaultValue: DEFAULT_NUM_OUTPUTS}
+        {name: "nOutputs", type: Number, multiple: false, defaultValue: DEFAULT_NUM_OUTPUTS},
+        {name: "justCreateTx", type: Boolean, multiple: false, defaultValue: false}
     ];
     return commandLineArgs(optionDefinitions, {camelCase: true});
 }

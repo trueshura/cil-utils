@@ -29,14 +29,7 @@ class CilUtils {
     }
 
     // TODO: Исправить на массив адресов, чтобы можно было нескольким отправлять
-    async faucet(strAddress, amount, numOfOutputs = NUM_OF_OUTPUTS) {
-
-        // Адрес куда слать (можно сгенерить с помощью generateWallet.js)
-        const tx = await this.createTxWithFunds(strAddress, amount, numOfOutputs);
-        await this.sendTx(tx);
-    }
-
-    async createTxWithFunds(strAddress, nAmountToSend, numOfOutputs, manualFee) {
+    async createTxWithFunds(strAddress, nAmountToSend, numOfOutputs = NUM_OF_OUTPUTS, manualFee) {
         await this._loadedPromise;
         strAddress = this.stripAddressPrefix(strAddress);
 
@@ -67,7 +60,6 @@ class CilUtils {
 
     async sendTx(tx) {
         await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
-        console.log(`Funded in ${tx.getHash()}`);
     }
 
     async getUtxos(strAddress) {
