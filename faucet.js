@@ -1,13 +1,14 @@
 const assert = require('assert');
 const commandLineArgs = require('command-line-args');
 const readline = require('readline');
+const Long = require('long');
 
 const CilUtils = require('./cilUtils');
 const Config = require('./config');
 
 // Читаем опции
 const options = readCmdLineOptions();
-let {fundsPk, receiverAddr, amount, nOutputs, justCreateTx} = options;
+let {fundsPk, receiverAddr, amount, nOutputs, justCreateTx, utxo, amountHas} = options;
 
 main()
     .then(() => {
@@ -35,13 +36,39 @@ async function main() {
         privateKey: fundsPk
     });
 
-    const tx = await utils.createTxWithFunds(receiverAddr, amount, nOutputs);
+    // this means we create TX offline with UTXOs
+    let arrCoins;
+    let gatheredAmount;
+
+    if (Array.isArray(utxo) && utxo.length) {
+        assert(amountHas, 'Specify --amountHas. We need it to create change!');
+        arrCoins = utxo.map(strUtxoIndex => {
+            const [strHash, strIdx] = strUtxoIndex.split(',');
+            return {hash: strHash.trim(), nOut: parseInt(strIdx)};
+        });
+        gatheredAmount = amountHas;
+    } else {
+        const arrUtxos = await this.getUtxos();
+        ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, amount));
+
+    }
+
+    const tx = await utils.createTxWithFunds({
+            arrCoins,
+            gatheredAmount,
+            receiverAddr,
+            amount,
+            nOutputs
+        }
+    );
+
     if (justCreateTx) {
-        console.log(`Here is your tx: "${tx.encode().toString('hex')}"`);
-        console.log(`You can send it via RPC.sendRawTx call`);
+        console.error('Here is your tx. You can send it via RPC.sendRawTx call');
+        console.log(tx.encode().toString('hex'));
+        console.error(`Here is TX containment: ${JSON.stringify(prepareForStringifyObject(tx.rawData), undefined, 2)}`);
     } else {
         await utils.sendTx(tx);
-        console.log(`Tx ${tx.getHash()} successfully sent`);
+        console.error(`Tx ${tx.getHash()} successfully sent`);
     }
 }
 
@@ -63,7 +90,9 @@ function readCmdLineOptions() {
         {name: "receiverAddr", type: String, multiple: false},
         {name: "amount", type: Number, multiple: false},
         {name: "nOutputs", type: Number, multiple: false, defaultValue: DEFAULT_NUM_OUTPUTS},
-        {name: "justCreateTx", type: Boolean, multiple: false, defaultValue: false}
+        {name: "justCreateTx", type: Boolean, multiple: false, defaultValue: false},
+        {name: "utxo", type: String, multiple: true},
+        {name: "amountHas", type: Number, multiple: false}
     ];
     return commandLineArgs(optionDefinitions, {camelCase: true});
 }
@@ -84,4 +113,29 @@ function questionAsync(prompt, password = false) {
             resolve(answer.trim());
         });
     });
+}
+
+function prepareForStringifyObject(obj) {
+    if (!(obj instanceof Object)) return obj;
+
+    if (Buffer.isBuffer(obj)) return obj.toString('hex');
+    if (Array.isArray(obj)) return obj.map(elem => prepareForStringifyObject(elem));
+
+    const resultObject = {};
+    for (let key of Object.keys(obj)) {
+        if (typeof obj[key] === 'function' || typeof obj[key] === 'undefined') continue;
+
+        if (Buffer.isBuffer(obj[key])) {
+            resultObject[key] = obj[key].toString('hex');
+        } else if (Array.isArray(obj[key])) {
+            resultObject[key] = prepareForStringifyObject(obj[key]);
+        } else if (Long.isLong(obj[key])) {
+            resultObject[key] = obj[key].toNumber();
+        } else if (obj[key] instanceof Object) {
+            resultObject[key] = prepareForStringifyObject(obj[key]);
+        } else {
+            resultObject[key] = obj[key];
+        }
+    }
+    return resultObject;
 }

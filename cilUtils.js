@@ -29,7 +29,14 @@ class CilUtils {
     }
 
     // TODO: Исправить на массив адресов, чтобы можно было нескольким отправлять
-    async createTxWithFunds(strAddress, nAmountToSend, numOfOutputs = NUM_OF_OUTPUTS, manualFee) {
+    async createTxWithFunds({
+                                arrCoins,
+                                gatheredAmount,
+                                receiverAddr: strAddress,
+                                amount: nAmountToSend,
+                                nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
+                                manualFee
+                            }) {
         await this._loadedPromise;
         strAddress = this.stripAddressPrefix(strAddress);
 
@@ -37,7 +44,7 @@ class CilUtils {
         let fee = this._nFeePerInputOutput * (numOfOutputs + 1);
 
         const tx = new factory.Transaction();
-        const gathered = await this._addInputs(tx, nAmountToSend + (manualFee ? manualFee : fee));
+        await this._addInputs(tx, arrCoins);
 
         // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
         for (let i = 0; i < numOfOutputs; i++) {
@@ -47,7 +54,7 @@ class CilUtils {
         fee += this._nFeePerInputOutput * tx.inputs.length;
 
         // сдача
-        const change = gathered - nAmountToSend - (manualFee ? manualFee : fee);
+        const change = gatheredAmount - nAmountToSend - (manualFee ? manualFee : fee);
         if (change) {
             tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
@@ -62,6 +69,12 @@ class CilUtils {
         await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
     }
 
+    /**
+     * Query RPC for UTXOs for address
+     *
+     * @param {String} strAddress
+     * @return {Promise<[{hash,nOut, amount}]>}
+     */
     async getUtxos(strAddress) {
         strAddress = strAddress || this._kpFunds.address;
 
@@ -74,10 +87,10 @@ class CilUtils {
     /**
      *
      * @param {Array} arrUtxos of {hash, nOut, amount}
-     * @param {Number} amount
+     * @param {Number} amount TO SEND (not including fees)
      * @return {arrCoins, gathered}
      */
-    _gatherInputsForAmount(arrUtxos, amount) {
+    gatherInputsForAmount(arrUtxos, amount) {
         const arrCoins = [];
         let gathered = 0;
         for (let coins of arrUtxos) {
@@ -109,7 +122,7 @@ class CilUtils {
         );
 
         fee = fee || this._nFeeInvoke * 10;
-        await this._addInputs(tx, fee);
+        await this._fillInputsFromRpc(tx, fee);
         for (let i in tx.inputs) {
             tx.claim(parseInt(i), this._kpFunds.privateKey);
         }
@@ -118,23 +131,29 @@ class CilUtils {
     }
 
     /**
-     * Fill TX with inputs for requested amount, or throws
-     * return amount gathered with these inputs. use it to calculate change
+     * Fill TX with inputs from utxos
      *
      * @param {Transaction} tx
-     * @param {Number} nAmountNeeded
-     * @return {Promise<Number>}
+     * @param {Array} arrCoins {hash, nOut}
      * @private
      */
-    async _addInputs(tx, nAmountNeeded) {
-        const arrUtxos = await this.getUtxos();
-        const {arrCoins, gathered} = this._gatherInputsForAmount(arrUtxos, nAmountNeeded);
-
+    async _addInputs(tx, arrCoins) {
         for (let input of arrCoins) {
             tx.addInput(input.hash, input.nOut);
         }
+    }
 
-        return gathered;
+    /**
+     * Fill TX with inputs for requested amount, or throws
+     *
+     * @param {Transaction} tx
+     * @param {Number} amount
+     * @private
+     */
+    async _fillInputsFromRpc(tx, amount) {
+        const arrUtxos = await this.getUtxos();
+        const {arrCoins, gathered} = this.gatherInputsForAmount(arrUtxos, amount);
+        this._addInputs(tx, arrCoins);
     }
 
     async queryRpcMethod(strName, objParams) {
