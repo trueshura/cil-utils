@@ -48,7 +48,7 @@ async function main() {
         });
         gatheredAmount = amountHas;
     } else {
-        const arrUtxos = await this.getUtxos();
+        const arrUtxos = await utils.getUtxos();
         ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, amount));
 
     }
@@ -76,6 +76,8 @@ function readCmdLineOptions() {
     const {
         RPC_ADDRESS,
         RPC_PORT,
+        RPC_USER = '',
+        PRC_PASS = '',
         FEE_DEPLOY,
         FEE_PER_INPUT_OUTPUT,
         DEFAULT_NUM_OUTPUTS
@@ -84,6 +86,8 @@ function readCmdLineOptions() {
     const optionDefinitions = [
         {name: "rpcAddress", type: String, multiple: false, defaultValue: RPC_ADDRESS},
         {name: "rpcPort", type: Number, multiple: false, defaultValue: RPC_PORT},
+        {name: "rpcUser", type: String, multiple: false, defaultValue: RPC_USER},
+        {name: "rpcPass", type: String, multiple: false, defaultValue: PRC_PASS},
         {name: "nFeePerInputOutput", type: Number, multiple: false, defaultValue: FEE_PER_INPUT_OUTPUT},
         {name: "nFeeDeploy", type: Number, multiple: false, defaultValue: FEE_DEPLOY},
         {name: "fundsPk", type: String, multiple: false},

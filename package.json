@@ -3,7 +3,7 @@
   "main": "cilUtils.js",
   "version": "0.2.0",
   "dependencies": {
-    "chain-in-law": "git+https://github.com/SilentNotaryEcosystem/Cil-core.git#devel",
+    "chain-in-law": "git+https://github.com/SilentNotaryEcosystem/Cil-core.git#staging",
     "command-line-args": "^5.1.1",
     "jayson": "^3.0.2"
   },
