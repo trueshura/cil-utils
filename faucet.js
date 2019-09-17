@@ -22,13 +22,28 @@ main()
 // ----------------------------
 
 async function main() {
+    const arrReceivers = [];
+    let nToSend = 0;
+
     if (!fundsPk) fundsPk = await questionAsync('Enter PK with funds:', true);
-    if (!receiverAddr) receiverAddr = await questionAsync('Enter receiver address:', false);
-    if (!amount) amount = parseFloat(await questionAsync('Enter amount:', false));
+    if (!receiverAddr) {
+        while (true) {
+            const strReceiverAddr = await questionAsync('Enter receiver address (empty line - finish):', false);
+            if (!strReceiverAddr.length) break;
+            const nAmount = parseFloat(await questionAsync('Enter amount:', false));
+            arrReceivers.push([strReceiverAddr, nAmount]);
+            nToSend += nAmount;
+        }
+    } else {
+        assert(receiverAddr.length === amount.length, 'Number of --receivers doesnt match number of --amount');
+        receiverAddr.forEach((addr, i) => {
+            arrReceivers.push([addr, amount[i]]);
+            nToSend += amount[i];
+        });
+    }
 
     assert(fundsPk, 'Specify --fundsPk');
-    assert(receiverAddr, 'Specify --receiverAddr');
-    assert(amount, 'Specify --amount');
+    assert(arrReceivers.length, 'Specify at least one receiver (--receiverAddr)');
 
     const utils = new CilUtils({
         ...options,
@@ -48,17 +63,16 @@ async function main() {
         gatheredAmount = amountHas;
     } else {
         const arrUtxos = await utils.getUtxos();
-        ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, amount));
+        ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, nToSend));
 
     }
 
     const tx = await utils.createTxWithFunds({
             arrCoins,
             gatheredAmount,
-            receiverAddr,
-            amount,
             nOutputs,
-            nConciliumId: 1
+        nConciliumId: 0,
+        arrReceivers
         }
     );
 
@@ -69,9 +83,9 @@ async function main() {
         console.error('Here is your tx. You can send it via RPC.sendRawTx call');
         console.log(tx.encode().toString('hex'));
     } else {
-        console.error('------------ Tx wasnt sent: uncomment below -------------');
-//        await utils.sendTx(tx);
-//        console.error(`Tx ${tx.getHash()} successfully sent`);
+//        console.error('------------ Tx wasnt sent: uncomment below -------------');
+        await utils.sendTx(tx);
+        console.error(`Tx ${tx.getHash()} successfully sent`);
     }
 }
 
@@ -95,8 +109,8 @@ function readCmdLineOptions() {
         {name: "nFeePerInputOutput", type: Number, multiple: false, defaultValue: FEE_PER_INPUT_OUTPUT},
         {name: "nFeeDeploy", type: Number, multiple: false, defaultValue: FEE_DEPLOY},
         {name: "fundsPk", type: String, multiple: false},
-        {name: "receiverAddr", type: String, multiple: false},
-        {name: "amount", type: Number, multiple: false},
+        {name: "receiverAddr", type: String, multiple: true},
+        {name: "amount", type: Number, multiple: true},
         {name: "nOutputs", type: Number, multiple: false, defaultValue: DEFAULT_NUM_OUTPUTS},
         {name: "justCreateTx", type: Boolean, multiple: false, defaultValue: false},
         {name: "utxo", type: String, multiple: true},
