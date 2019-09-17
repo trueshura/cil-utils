@@ -1,17 +1,21 @@
+const url = require('url');
 const assert = require('assert');
 const rpc = require('jayson/promise');
+const rp = require('request-promise');
 const factory = require('chain-in-law');
+const Long = require('long');
 
 // на сколько частей побить сумму (для того, чтобы не ждать стабильности блоков)
 const NUM_OF_OUTPUTS = 20;
 
 class CilUtils {
     constructor(options) {
-        const {rpcAddress, rpcPort, nFeeDeploy, nFeeInvoke, nFeePerInputOutput, privateKey} = options;
+        const {rpcAddress, rpcPort, rpcUser, rpcPass, nFeeDeploy, nFeeInvoke, nFeePerInputOutput, privateKey, apiUrl} = options;
 
         assert(privateKey, 'Specify privateKey');
         assert(rpcAddress, 'Specify rpcAddress');
         assert(rpcPort, 'Specify rpcPort');
+        assert(apiUrl, 'Specify apiUrl (ENV)');
 
         this._client = rpc.client.http({host: rpcAddress, port: rpcPort});
         this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
@@ -26,6 +30,12 @@ class CilUtils {
                 console.error(err);
                 process.exit(1);
             });
+
+        this._apiUrl = apiUrl;
+    }
+
+    asyncLoaded() {
+        return this._loadedPromise;
     }
 
     // TODO: Исправить на массив адресов, чтобы можно было нескольким отправлять
@@ -35,7 +45,8 @@ class CilUtils {
                                 receiverAddr: strAddress,
                                 amount: nAmountToSend,
                                 nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
-                                manualFee
+                                manualFee,
+                                nConciliumId
                             }) {
         await this._loadedPromise;
         strAddress = this.stripAddressPrefix(strAddress);
@@ -52,6 +63,9 @@ class CilUtils {
         }
 
         fee += this._nFeePerInputOutput * tx.inputs.length;
+
+        // ConciliumId
+        if (nConciliumId) tx.conciliumId = nConciliumId;
 
         // сдача
         const change = gatheredAmount - nAmountToSend - (manualFee ? manualFee : fee);
@@ -78,10 +92,7 @@ class CilUtils {
     async getUtxos(strAddress) {
         strAddress = strAddress || this._kpFunds.address;
 
-        return await this.queryRpcMethod(
-            'walletListUnspent',
-            {strAddress: strAddress, bStableOnly: true}
-        );
+        return await this._queryApi('Unspent', strAddress);
     }
 
     /**
@@ -102,6 +113,10 @@ class CilUtils {
         throw new Error('Not enough coins!');
     }
 
+    gatherInputsForContractCall(arrUtxos, nFee) {
+        return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke);
+    }
+
     stripAddressPrefix(strAddr) {
         const prefix = factory.Constants.ADDRESS_PREFIX;
         return strAddr.substring(0, 2) === prefix ?
@@ -109,7 +124,7 @@ class CilUtils {
             : strAddr;
     }
 
-    async createTxInvokeContract(strAddress, objInvokeCode, fee) {
+    async createTxInvokeContract(strAddress, objInvokeCode, arrInputs, fee) {
         await this._loadedPromise;
 
         strAddress = this.stripAddressPrefix(strAddress);
@@ -128,6 +143,52 @@ class CilUtils {
         }
 
         return tx;
+    }
+
+    async queryRpcMethod(strName, objParams) {
+        const res = await this._client.request(
+            strName,
+            objParams
+        );
+        if (res.error) throw res.error;
+        if (res.result) return res.result;
+    }
+
+    static prepareForStringifyObject(obj) {
+        if (!(obj instanceof Object)) return obj;
+
+        if (Buffer.isBuffer(obj)) return obj.toString('hex');
+        if (Array.isArray(obj)) return obj.map(elem => this.prepareForStringifyObject(elem));
+
+        const resultObject = {};
+        for (let key of Object.keys(obj)) {
+            if (typeof obj[key] === 'function' || typeof obj[key] === 'undefined') continue;
+
+            if (Buffer.isBuffer(obj[key])) {
+                resultObject[key] = obj[key].toString('hex');
+            } else if (Array.isArray(obj[key])) {
+                resultObject[key] = this.prepareForStringifyObject(obj[key]);
+            } else if (Long.isLong(obj[key])) {
+                resultObject[key] = obj[key].toNumber();
+            } else if (obj[key] instanceof Object) {
+                resultObject[key] = this.prepareForStringifyObject(obj[key]);
+            } else {
+                resultObject[key] = obj[key];
+            }
+        }
+        return resultObject;
+    }
+
+    async _queryApi(endpoint, strParam) {
+        const options = {
+            method: "GET",
+            rejectUnauthorized: false,
+            url: url.resolve(this._apiUrl, `${endpoint}/${strParam}`),
+            json: true
+        };
+
+        const result = await rp(options);
+        return result;
     }
 
     /**
@@ -154,15 +215,6 @@ class CilUtils {
         const arrUtxos = await this.getUtxos();
         const {arrCoins, gathered} = this.gatherInputsForAmount(arrUtxos, amount);
         this._addInputs(tx, arrCoins);
-    }
-
-    async queryRpcMethod(strName, objParams) {
-        const res = await this._client.request(
-            strName,
-            objParams
-        );
-        if (res.error) throw res.error;
-        if (res.result) return res.result;
     }
 }
 

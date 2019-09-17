@@ -3,14 +3,16 @@
   "main": "cilUtils.js",
   "version": "0.2.0",
   "dependencies": {
-    "chain-in-law": "git+https://github.com/SilentNotaryEcosystem/Cil-core.git#staging",
+    "chain-in-law": "git+https://github.com/SilentNotaryEcosystem/Cil-core.git#master",
     "command-line-args": "^5.1.1",
-    "jayson": "^3.0.2"
+    "jayson": "^3.0.2",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
   },
   "devDependencies": {
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
-    "mocha": "^6.1.4",
+    "mocha": "^6.2.0",
     "sinon": "^7.3.2"
   }
 }
