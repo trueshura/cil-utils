@@ -38,39 +38,47 @@ class CilUtils {
         return this._loadedPromise;
     }
 
-    // TODO: Исправить на массив адресов, чтобы можно было нескольким отправлять
     async createTxWithFunds({
                                 arrCoins,
                                 gatheredAmount,
                                 receiverAddr: strAddress,
                                 amount: nAmountToSend,
                                 nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
+                                arrReceivers,
                                 manualFee,
                                 nConciliumId
                             }) {
         await this._loadedPromise;
-        strAddress = this.stripAddressPrefix(strAddress);
 
-        // we'll create numOfOutputs + 1
-        let fee = this._nFeePerInputOutput * (numOfOutputs + 1);
+        if (!arrReceivers) {
+            arrReceivers = [[strAddress, nAmountToSend]];
+        }
 
+        let nTotalSent = 0;
         const tx = new factory.Transaction();
         await this._addInputs(tx, arrCoins);
 
-        // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
-        for (let i = 0; i < numOfOutputs; i++) {
-            tx.addReceiver(parseInt(nAmountToSend / numOfOutputs), Buffer.from(strAddress, 'hex'));
-        }
+        for (let [strAddr, nAmount] of arrReceivers) {
+            nTotalSent += nAmount;
+            strAddr = this.stripAddressPrefix(strAddr);
 
-        fee += this._nFeePerInputOutput * tx.inputs.length;
+            // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
+            for (let i = 0; i < numOfOutputs; i++) {
+                tx.addReceiver(parseInt(nAmount / numOfOutputs), Buffer.from(strAddr, 'hex'));
+            }
+        }
 
         // ConciliumId
         if (nConciliumId) tx.conciliumId = nConciliumId;
 
-        // сдача
-        const change = gatheredAmount - nAmountToSend - (manualFee ? manualFee : fee);
-        if (change) {
-            tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+        // сдача есть?
+        let fee = this.calculateTxFee(tx, false);
+        let change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
+        if (change > 0) {
+            fee = this.calculateTxFee(tx);
+            change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
+
+            if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
 
         for (let i in tx.inputs) {
@@ -194,6 +202,13 @@ class CilUtils {
         const arrUtxos = await this.getUtxos();
         const {arrCoins, gathered} = this.gatherInputsForAmount(arrUtxos, amount);
         this._addInputs(tx, arrCoins);
+    }
+
+    calculateTxFee(tx, bWithChange = true) {
+        const nOutputsCount = tx.outputs ? tx.outputs.length : 0;
+        const nInputsCount = tx.inputs ? tx.inputs.length : 0;
+        assert(nInputsCount > 0, 'No inputs in tx!');
+        return this._nFeePerInputOutput * (nOutputsCount + nInputsCount + (bWithChange ? 1 : 0));
     }
 }
 
