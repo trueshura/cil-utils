@@ -1,7 +1,6 @@
 const assert = require('assert');
 const commandLineArgs = require('command-line-args');
 const readline = require('readline');
-const Long = require('long');
 
 const CilUtils = require('./cilUtils');
 const Config = require('./config');
@@ -58,17 +57,21 @@ async function main() {
             gatheredAmount,
             receiverAddr,
             amount,
-            nOutputs
+            nOutputs,
+            nConciliumId: 1
         }
     );
+
+    console.error(
+        `Here is TX containment: ${JSON.stringify(CilUtils.prepareForStringifyObject(tx.rawData), undefined, 2)}`);
 
     if (justCreateTx) {
         console.error('Here is your tx. You can send it via RPC.sendRawTx call');
         console.log(tx.encode().toString('hex'));
-        console.error(`Here is TX containment: ${JSON.stringify(prepareForStringifyObject(tx.rawData), undefined, 2)}`);
     } else {
-        await utils.sendTx(tx);
-        console.error(`Tx ${tx.getHash()} successfully sent`);
+        console.error('------------ Tx wasnt sent: uncomment below -------------');
+//        await utils.sendTx(tx);
+//        console.error(`Tx ${tx.getHash()} successfully sent`);
     }
 }
 
@@ -80,7 +83,8 @@ function readCmdLineOptions() {
         PRC_PASS = '',
         FEE_DEPLOY,
         FEE_PER_INPUT_OUTPUT,
-        DEFAULT_NUM_OUTPUTS
+        DEFAULT_NUM_OUTPUTS,
+        API_URL
     } = Config;
 
     const optionDefinitions = [
@@ -96,6 +100,7 @@ function readCmdLineOptions() {
         {name: "nOutputs", type: Number, multiple: false, defaultValue: DEFAULT_NUM_OUTPUTS},
         {name: "justCreateTx", type: Boolean, multiple: false, defaultValue: false},
         {name: "utxo", type: String, multiple: true},
+        {name: "apiUrl", type: String, multiple: false, defaultValue: API_URL},
         {name: "amountHas", type: Number, multiple: false}
     ];
     return commandLineArgs(optionDefinitions, {camelCase: true});
@@ -119,27 +124,3 @@ function questionAsync(prompt, password = false) {
     });
 }
 
-function prepareForStringifyObject(obj) {
-    if (!(obj instanceof Object)) return obj;
-
-    if (Buffer.isBuffer(obj)) return obj.toString('hex');
-    if (Array.isArray(obj)) return obj.map(elem => prepareForStringifyObject(elem));
-
-    const resultObject = {};
-    for (let key of Object.keys(obj)) {
-        if (typeof obj[key] === 'function' || typeof obj[key] === 'undefined') continue;
-
-        if (Buffer.isBuffer(obj[key])) {
-            resultObject[key] = obj[key].toString('hex');
-        } else if (Array.isArray(obj[key])) {
-            resultObject[key] = prepareForStringifyObject(obj[key]);
-        } else if (Long.isLong(obj[key])) {
-            resultObject[key] = obj[key].toNumber();
-        } else if (obj[key] instanceof Object) {
-            resultObject[key] = prepareForStringifyObject(obj[key]);
-        } else {
-            resultObject[key] = obj[key];
-        }
-    }
-    return resultObject;
-}
