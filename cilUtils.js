@@ -15,7 +15,7 @@ class CilUtils {
         assert(privateKey, 'Specify privateKey');
         assert(rpcAddress, 'Specify rpcAddress');
         assert(rpcPort, 'Specify rpcPort');
-        assert(apiUrl, 'Specify apiUrl (ENV)');
+        assert(apiUrl || rpcAddress, 'Specify apiUrl or rpcAddress (ENV)');
 
         this._client = rpc.client.http({host: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
         this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
@@ -100,7 +100,8 @@ class CilUtils {
     async getUtxos(strAddress) {
         strAddress = strAddress || this._kpFunds.address;
 
-        return await this._queryApi('Unspent', strAddress);
+        if (this._apiUrl) return await this._queryApi('Unspent', strAddress);
+        return this.queryRpcMethod('walletListUnspent', {strAddress, bStableOnly: true});
     }
 
     /**
