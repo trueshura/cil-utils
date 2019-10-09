@@ -17,7 +17,7 @@ class CilUtils {
         assert(rpcPort, 'Specify rpcPort');
         assert(apiUrl, 'Specify apiUrl (ENV)');
 
-        this._client = rpc.client.http({host: rpcAddress, port: rpcPort});
+        this._client = rpc.client.http({host: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
         this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
 
         this._loadedPromise = factory.asyncLoad()
@@ -107,16 +107,19 @@ class CilUtils {
      *
      * @param {Array} arrUtxos of {hash, nOut, amount}
      * @param {Number} amount TO SEND (not including fees)
+     * @param {Boolean} bUseOnlyOne - use one big output for payment (it will be last one!)
      * @return {arrCoins, gathered}
      */
-    gatherInputsForAmount(arrUtxos, amount) {
+    gatherInputsForAmount(arrUtxos, amount, bUseOnlyOne = false) {
         const arrCoins = [];
         let gathered = 0;
         for (let coins of arrUtxos) {
             if (!coins.amount) continue;
             gathered += coins.amount;
             arrCoins.push(coins);
-            if (gathered > amount + this._nFeePerInputOutput * arrCoins.length) return {arrCoins, gathered};
+            if (bUseOnlyOne) {
+                if (coins.amount > amount) return {arrCoins: [coins], gathered: coins.amount, skip: arrCoins.length};
+            } else if (gathered > amount + this._nFeePerInputOutput * arrCoins.length) return {arrCoins, gathered};
         }
         throw new Error('Not enough coins!');
     }
