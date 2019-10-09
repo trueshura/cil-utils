@@ -49,6 +49,7 @@ async function main() {
         ...options,
         privateKey: fundsPk
     });
+    await utils.asyncLoaded();
 
     // this means we create TX offline with UTXOs
     let arrCoins;
@@ -71,7 +72,7 @@ async function main() {
             arrCoins,
             gatheredAmount,
             nOutputs,
-        nConciliumId: 0,
+        nConciliumId: 1,
         arrReceivers
         }
     );
