@@ -109,11 +109,16 @@ class CilUtils {
      * @param {Array} arrUtxos of {hash, nOut, amount}
      * @param {Number} amount TO SEND (not including fees)
      * @param {Boolean} bUseOnlyOne - use one big output for payment (it will be last one!)
+     * @param {Boolean} bBigFirst - use big outputs for first payment
      * @return {arrCoins, gathered}
      */
-    gatherInputsForAmount(arrUtxos, amount, bUseOnlyOne = false) {
+    gatherInputsForAmount(arrUtxos, amount, bUseOnlyOne = false, bBigFirst = false) {
         const arrCoins = [];
         let gathered = 0;
+        if (bBigFirst) {
+            arrUtxos = arrUtxos.sort((a, b) => b.amount - a.amount);
+        }
+
         for (let coins of arrUtxos) {
             if (!coins.amount) continue;
             gathered += coins.amount;
@@ -125,8 +130,8 @@ class CilUtils {
         throw new Error('Not enough coins!');
     }
 
-    gatherInputsForContractCall(arrUtxos, nFee) {
-        return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke);
+    gatherInputsForContractCall(arrUtxos, nFee, bUseOnlyOne = false) {
+        return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne);
     }
 
     stripAddressPrefix(strAddr) {
