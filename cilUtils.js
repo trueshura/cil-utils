@@ -125,7 +125,12 @@ class CilUtils {
             arrCoins.push(coins);
             if (bUseOnlyOne) {
                 if (coins.amount > amount) return {arrCoins: [coins], gathered: coins.amount, skip: arrCoins.length};
-            } else if (gathered > amount + this._nFeePerInputOutput * arrCoins.length) return {arrCoins, gathered};
+            } else if (gathered > amount + this._nFeePerInputOutput * (arrCoins.length + 1)) {
+                return {
+                    arrCoins,
+                    gathered
+                };
+            }
         }
         throw new Error('Not enough coins!');
     }
