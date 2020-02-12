@@ -81,9 +81,15 @@ class CilUtils {
             if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
 
-        for (let i in tx.inputs) {
-            tx.claim(parseInt(i), this._kpFunds.privateKey);
+        // for single PK scenario it's allowed to use single claimProof in txSignature
+        if (tx.inputs.length > 1) {
+            tx.signForContract(this._kpFunds.privateKey);
+        } else {
+            for (let i in tx.inputs) {
+                tx.claim(parseInt(i), this._kpFunds.privateKey);
+            }
         }
+
         return tx;
     }
 
@@ -135,8 +141,8 @@ class CilUtils {
         throw new Error('Not enough coins!');
     }
 
-    gatherInputsForContractCall(arrUtxos, nFee, bUseOnlyOne = false) {
-        return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne);
+    gatherInputsForContractCall(arrUtxos, nFee, bUseOnlyOne = false, bBigFirst = false) {
+        return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne, bBigFirst);
     }
 
     stripAddressPrefix(strAddr) {
