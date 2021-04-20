@@ -19,14 +19,16 @@ if (process.env.NODE_ENV === 'Devel') {
 }
 
 module.exports = {
-    RPC_ADDRESS: 'localhost',
-    RPC_PORT: port,
+  RPC_ADDRESS: conciliumTwoAddr,
+  RPC_PORT: port,
+  RPC_USER: conciliumTwoRpcUser,
+  PRC_PASS: conciliumTwoRpcPass,
 
-    // на сколько частей побить сумму (для того, чтобы не ждать стабильности блоков)
-    DEFAULT_NUM_OUTPUTS: 1,
-    FEE_PER_INPUT_OUTPUT: parseInt(4000 / 1024 * 112),
-    API_URL: apiUrl,
-    conciliumTwoAddr,
-    conciliumTwoRpcUser,
-    conciliumTwoRpcPass
+  // на сколько частей побить сумму (для того, чтобы не ждать стабильности блоков)
+  DEFAULT_NUM_OUTPUTS: 1,
+  FEE_PER_INPUT_OUTPUT: parseInt(4000 / 1024 * 112),
+  API_URL: apiUrl,
+  conciliumTwoAddr,
+  conciliumTwoRpcUser,
+  conciliumTwoRpcPass
 };

@@ -1,13 +1,14 @@
 const assert = require('assert');
 const commandLineArgs = require('command-line-args');
 const readline = require('readline');
+const factory = require('chain-in-law');
 
 const CilUtils = require('./cilUtils');
 const Config = require('./config');
 
 // Читаем опции
 const options = readCmdLineOptions();
-let {fundsPk, receiverAddr, amount, nOutputs, justCreateTx, utxo, amountHas, concilium} = options;
+let {fundsPk, receiverAddr, amount, nOutputs, justCreateTx, utxo, amountHas} = options;
 
 main()
   .then(() => {
@@ -22,28 +23,10 @@ main()
 // ----------------------------
 
 async function main() {
-  const arrReceivers = [];
-  let nToSend = 0;
-
-  if (!fundsPk) fundsPk = await questionAsync('Enter PK with funds:', true);
-  if (!receiverAddr) {
-    while (true) {
-      const strReceiverAddr = await questionAsync('Enter receiver address (empty line - finish):', false);
-      if (!strReceiverAddr.length) break;
-      const nAmount = parseFloat(await questionAsync('Enter amount:', false));
-      arrReceivers.push([strReceiverAddr, nAmount]);
-      nToSend += nAmount;
-    }
-  } else {
-    assert(receiverAddr.length === amount.length, 'Number of --receivers doesnt match number of --amount');
-    receiverAddr.forEach((addr, i) => {
-      arrReceivers.push([addr, amount[i]]);
-      nToSend += amount[i];
-    });
-  }
-
-  assert(fundsPk, 'Specify --fundsPk');
-  assert(arrReceivers.length, 'Specify at least one receiver (--receiverAddr)');
+//  if (!fundsPk) fundsPk = await questionAsync('Enter PK with funds:', true);
+  const fundsPk = 'e054b17f4b8f150bf3ae5f6721218e384dafed59031bbacae4e73948bfbb1a8c';
+//  const strReceiverAddr = await questionAsync('Enter receiver address (empty line - finish):', false);
+  const strReceiverAddr = 'b0b847a832b1e71da6ec66746a897b5ef8a48928';
 
   const utils = new CilUtils({
     ...options,
@@ -52,41 +35,22 @@ async function main() {
   await utils.asyncLoaded();
 
   // this means we create TX offline with UTXOs
-  let arrCoins;
-  let gatheredAmount;
 
-  if (Array.isArray(utxo) && utxo.length) {
-    assert(amountHas, 'Specify --amountHas. We need it to create change!');
-    arrCoins = utxo.map(strUtxoIndex => {
-      const [strHash, strIdx] = strUtxoIndex.split(',');
-      return {hash: strHash.trim(), nOut: parseInt(strIdx)};
-    });
-    gatheredAmount = amountHas;
-  } else {
-    const arrUtxos = await utils.getUtxos();
-    ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, nToSend, true, true));
-  }
+  const arrUtxos = await utils.getUtxos();
 
-  const tx = await utils.createTxWithFunds({
-      arrCoins,
-      gatheredAmount,
-      nOutputs,
-      nConciliumId: concilium || 0,
-      arrReceivers
-    }
+  const tx = createJoinTx(
+    arrUtxos.slice(-800),
+    1,
+    strReceiverAddr,
+    fundsPk
   );
 
   console.error(
     `Here is TX containment: ${JSON.stringify(CilUtils.prepareForStringifyObject(tx.rawData), undefined, 2)}`);
 
-  if (justCreateTx) {
-    console.error('Here is your tx. You can send it via RPC.sendRawTx call');
-    console.log(tx.encode().toString('hex'));
-  } else {
-//        console.error('------------ Tx wasnt sent: uncomment below -------------');
-    await utils.sendTx(tx);
-    console.error(`Tx ${tx.getHash()} successfully sent`);
-  }
+//  console.error('------------ Tx wasnt sent: uncomment below -------------');
+  await utils.sendTx(tx);
+  console.error(`Tx ${tx.getHash()} successfully sent`);
 }
 
 function readCmdLineOptions() {
@@ -115,9 +79,7 @@ function readCmdLineOptions() {
     {name: "justCreateTx", type: Boolean, multiple: false, defaultValue: false},
     {name: "utxo", type: String, multiple: true},
     {name: "apiUrl", type: String, multiple: false, defaultValue: API_URL},
-    {name: "amountHas", type: Number, multiple: false},
-    {name: "concilium", type: Number, multiple: false}
-
+    {name: "amountHas", type: Number, multiple: false}
   ];
   return commandLineArgs(optionDefinitions, {camelCase: true});
 }
@@ -140,3 +102,24 @@ function questionAsync(prompt, password = false) {
   });
 }
 
+function createJoinTx(arrUtxos, nConciliumId, strReceiver, strPkOwner) {
+  const tx = new factory.Transaction();
+  tx.conciliumId = nConciliumId;
+  let nInputs = 0;
+  let nTotalAmount = 0;
+
+  for (let utxo of arrUtxos) {
+    nTotalAmount += utxo.amount;
+    tx.addInput(utxo.hash, utxo.nOut);
+    nInputs++;
+  }
+
+  const fee = nInputs * Math.round(factory.Constants.fees.TX_FEE * 0.04) + factory.Constants.fees.TX_FEE * 0.12;
+  tx.addReceiver(nTotalAmount - fee, Buffer.from(strReceiver, 'hex'));
+
+  tx.signForContract(strPkOwner);
+
+  logger.debug(`Created TX with ${tx.inputs.length} inputs`);
+
+  return tx;
+}
