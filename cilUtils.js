@@ -3,7 +3,12 @@ const assert = require('assert');
 const rpc = require('jayson/promise');
 const rp = require('request-promise');
 const factory = require('chain-in-law');
-const Long = require('long');
+
+const sleep = (delay) => {
+  return new Promise(resolve => {
+    setTimeout(() => resolve(), delay);
+  });
+};
 
 // на сколько частей побить сумму (для того, чтобы не ждать стабильности блоков)
 const NUM_OF_OUTPUTS = 20;
@@ -142,6 +147,19 @@ class CilUtils {
     await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
   }
 
+  async isTxDone(strTxHash, nHoldoffSeconds = 10 * 60) {
+    const nSecondsBetweenAttempts = 60;
+    const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;
+
+    for (let i = 0; i < nAttempts; i++) {
+      const {result} = await this._client.request('getTx', {strTxHash});
+      if (result && result.status === 'confirmed') return true;
+      console.log(`Still not confirmed. Attempt "${i + 1}". Sleeping`);
+      await this._sleep(nSecondsBetweenAttempts * 1000);
+    }
+    throw new Error('Transaction still not confirmed');
+  }
+
   /**
    * Query RPC for UTXOs for address
    *
@@ -207,6 +225,10 @@ class CilUtils {
     return bOneSignature ?
       this._nFeePerInputNoSign * (nInputsCount) + this._nFeePerInputOutput * (nOutputsCount + (bWithChange ? 1 : 0)) :
       this._nFeePerInputOutput * (nOutputsCount + nInputsCount + (bWithChange ? 1 : 0));
+  }
+
+  _sleep(nMsec) {
+    return sleep(nMsec);
   }
 }
 
