@@ -95,7 +95,7 @@ describe('CilUtils', () => {
     });
   });
 
-  describe('isTxDone', async () => {
+  describe('waitTxDone', async () => {
     let clock;
     beforeEach(async function() {
       this.timeout(15000);
@@ -122,7 +122,7 @@ describe('CilUtils', () => {
       };
       utils._sleep = async () => {};
 
-      await utils.isTxDone('fakeHash');
+      await utils.waitTxDone('fakeHash');
     });
   });
 

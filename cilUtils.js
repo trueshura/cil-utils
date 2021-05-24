@@ -147,17 +147,23 @@ class CilUtils {
     await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
   }
 
-  async isTxDone(strTxHash, nHoldoffSeconds = 10 * 60) {
+  async isTxDone(strTxHash) {
+    const {result} = await this._client.request('getTx', {strTxHash});
+    if (result && result.status === 'confirmed') return true;
+    return false;
+  }
+
+  async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60) {
     const nSecondsBetweenAttempts = 60;
     const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;
 
     for (let i = 0; i < nAttempts; i++) {
       const {result} = await this._client.request('getTx', {strTxHash});
       if (result && result.status === 'confirmed') return true;
-      console.log(`Still not confirmed. Attempt "${i + 1}". Sleeping`);
+//      console.log(`Still not confirmed. Attempt "${i + 1}". Sleeping`);
       await this._sleep(nSecondsBetweenAttempts * 1000);
     }
-    throw new Error('Transaction still not confirmed');
+    throw new Error('Transaction still is not confirmed');
   }
 
   /**
