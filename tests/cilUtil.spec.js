@@ -113,6 +113,7 @@ describe('CilUtils', () => {
     });
 
     it('should getDone', async () => {
+      utils._explorerHashUtxo = sinon.fake.resolves(true);
       let nAttempt = 3;
       utils._client = {
         request: async () => {

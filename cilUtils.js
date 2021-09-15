@@ -149,8 +149,7 @@ class CilUtils {
 
   async isTxDone(strTxHash) {
     const {result} = await this._client.request('getTx', {strTxHash});
-    if (result && result.status === 'confirmed') return true;
-    return false;
+    return result && result.status === 'confirmed' && await this._explorerHashUtxo(strTxHash);
   }
 
   async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60) {
@@ -158,8 +157,7 @@ class CilUtils {
     const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;
 
     for (let i = 0; i < nAttempts; i++) {
-      const {result} = await this._client.request('getTx', {strTxHash});
-      if (result && result.status === 'confirmed') return true;
+      if (await this.isTxDone(strTxHash)) return true;
 //      console.log(`Still not confirmed. Attempt "${i + 1}". Sleeping`);
       await this._sleep(nSecondsBetweenAttempts * 1000);
     }
@@ -235,6 +233,15 @@ class CilUtils {
 
   _sleep(nMsec) {
     return sleep(nMsec);
+  }
+
+  _explorerHashUtxo(strTxHash) {
+    try {
+      const objResult = this._queryApi('UTXO', strTxHash);
+      return !!Object.keys(objResult).length;
+    } catch (e) {
+      return false;
+    }
   }
 }
 

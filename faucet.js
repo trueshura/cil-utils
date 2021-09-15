@@ -64,7 +64,7 @@ async function main() {
     gatheredAmount = amountHas;
   } else {
     const arrUtxos = await utils.getUtxos();
-    ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, nToSend, true, true));
+    ({gathered: gatheredAmount, arrCoins} = utils.gatherInputsForAmount(arrUtxos, nToSend, false, true));
   }
 
   const tx = await utils.createTxWithFunds({
