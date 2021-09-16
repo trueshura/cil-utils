@@ -149,7 +149,7 @@ class CilUtils {
 
   async isTxDone(strTxHash) {
     const {result} = await this._client.request('getTx', {strTxHash});
-    return result && result.status === 'confirmed' && await this._explorerHashUtxo(strTxHash);
+    return result && result.status === 'confirmed' && await this._explorerHasUtxo(strTxHash);
   }
 
   async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60) {
@@ -206,7 +206,7 @@ class CilUtils {
     };
 
     const result = await rp(options);
-    return result;
+    return typeof result === 'string' ? JSON.parse(result) : result;
   }
 
   /**
@@ -235,9 +235,9 @@ class CilUtils {
     return sleep(nMsec);
   }
 
-  _explorerHashUtxo(strTxHash) {
+  async _explorerHasUtxo(strTxHash) {
     try {
-      const objResult = this._queryApi('UTXO', strTxHash);
+      const objResult = await this._queryApi('UTXO', strTxHash);
       return !!Object.keys(objResult).length;
     } catch (e) {
       return false;
