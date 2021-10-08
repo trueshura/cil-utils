@@ -231,6 +231,22 @@ class CilUtils {
       this._nFeePerInputOutput * (nOutputsCount + nInputsCount + (bWithChange ? 1 : 0));
   }
 
+  /**
+   *
+   * @param {Number} nInputsCount
+   * @param {Number} nOutputsCount
+   * @param {Boolean} bOneSignature - будет подписано 1 приватником?
+   * @returns {number}
+   */
+  estimateTxFee(nInputsCount, nOutputsCount, bOneSignature) {
+    assert(nInputsCount > 0, 'No inputs in tx!');
+    assert(nOutputsCount > 0, 'No outputs in tx!');
+    return bOneSignature ?
+      this._nFeePerInputNoSign * nInputsCount + this._nFeePerInputOutput * nOutputsCount :
+      this._nFeePerInputOutput * (nOutputsCount + nInputsCount);
+
+  }
+
   _sleep(nMsec) {
     return sleep(nMsec);
   }

@@ -283,5 +283,5 @@ describe('CilUtils', () => {
     utils._client.request = sinon.fake.resolves({error: 'some error'});
     return assert.isRejected(utils.getUtxos());
   });
-})
-;
+
+});
