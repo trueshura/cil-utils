@@ -37,7 +37,7 @@ describe('CilUtils', () => {
   });
 
   it('should getUtxos', async () => {
-    utils._queryApi = sinon.fake.resolves([
+    utils.queryApi = sinon.fake.resolves([
       {
         "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
         "nOut": 1,
@@ -233,7 +233,7 @@ describe('CilUtils', () => {
   });
 
 //  it('should createTxInvokeContract', async () => {
-//    utils._queryApi = sinon.fake.resolves([
+//    utils.queryApi = sinon.fake.resolves([
 //      {
 //        "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
 //        "nOut": 1,
@@ -274,7 +274,7 @@ describe('CilUtils', () => {
 
   it('should get "result" from response for getUtxos', async () => {
     const result = 'some data';
-    utils._queryApi = sinon.fake.resolves(result);
+    utils.queryApi = sinon.fake.resolves(result);
     const res = await utils.getUtxos();
     assert.equal(res, result);
   });

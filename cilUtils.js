@@ -173,7 +173,7 @@ class CilUtils {
   async getUtxos(strAddress) {
     strAddress = strAddress || this._kpFunds.address;
 
-    if (this._apiUrl) return await this._queryApi('Unspent', strAddress);
+    if (this._apiUrl) return await this.queryApi('Unspent', strAddress);
     return this.queryRpcMethod('walletListUnspent', {strAddress, bStableOnly: true});
   }
 
@@ -197,7 +197,7 @@ class CilUtils {
     return factory.utils.prepareForStringifyObject(obj);
   }
 
-  async _queryApi(endpoint, strParam) {
+  async queryApi(endpoint, strParam) {
     const options = {
       method: "GET",
       rejectUnauthorized: false,
@@ -237,7 +237,7 @@ class CilUtils {
 
   async _explorerHasUtxo(strTxHash) {
     try {
-      const objResult = await this._queryApi('UTXO', strTxHash);
+      const objResult = await this.queryApi('UTXO', strTxHash);
       return !!Object.keys(objResult).length;
     } catch (e) {
       return false;
