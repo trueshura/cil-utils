@@ -7,8 +7,8 @@ let conciliumTwoRpcPass;
 if (process.env.NODE_ENV === 'Devel') {
     apiUrl = 'https://test-explorer.ubikiri.com/api/';
     port = 18222;
-    conciliumTwoAddr = '74.119.194.26';
-    conciliumTwoRpcUser = 'cilTest';
+  conciliumTwoAddr = 'rpc-dv-1.ubikiri.com';
+  conciliumTwoRpcUser = 'cilTest';
     conciliumTwoRpcPass = 'd49c1d2735536baa4de1cc6';
 } else {
     apiUrl = 'https://explorer.ubikiri.com/api/';
