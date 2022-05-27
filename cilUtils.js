@@ -147,17 +147,23 @@ class CilUtils {
     await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
   }
 
-  async isTxDone(strTxHash) {
+  /**
+   *
+   * @param strTxHash
+   * @param bContractCall - если это вызов контракта, то в эксплорере не будет UTXO
+   * @returns {Promise<boolean>}
+   */
+  async isTxDone(strTxHash, bContractCall) {
     const {result} = await this._client.request('getTx', {strTxHash});
-    return result && result.status === 'confirmed' && await this._explorerHasUtxo(strTxHash);
+    return result && result.status === 'confirmed' && (bContractCall || await this._explorerHasUtxo(strTxHash));
   }
 
-  async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60) {
+  async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false) {
     const nSecondsBetweenAttempts = 60;
     const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;
 
     for (let i = 0; i < nAttempts; i++) {
-      if (await this.isTxDone(strTxHash)) return true;
+      if (await this.isTxDone(strTxHash, bContractCall)) return true;
 //      console.log(`Still not confirmed. Attempt "${i + 1}". Sleeping`);
       await this._sleep(nSecondsBetweenAttempts * 1000);
     }
