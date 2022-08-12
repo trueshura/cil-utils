@@ -158,6 +158,20 @@ class CilUtils {
     return result && result.status === 'confirmed' && (bContractCall || await this._explorerHasUtxo(strTxHash));
   }
 
+  /**
+   *
+   * @param strTxHash
+   * @returns {Promise<boolean>}
+   */
+  async isTxDoneExplorer(strTxHash) {
+    try {
+      const objResult = await this.queryApi('Transaction', strTxHash);
+      return objResult.status === 'stable' && objResult.block;
+    } catch (e) {
+      return false;
+    }
+  }
+
   async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false) {
     const nSecondsBetweenAttempts = 60;
     const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;

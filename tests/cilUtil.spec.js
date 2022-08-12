@@ -105,7 +105,7 @@ describe('CilUtils', () => {
         nFeeDeploy: 1e4,
         rpcPort: 18222,
         rpcAddress: 'localhost',
-        apiUrl: 'dummy'
+        apiUrl: 'https://test-explorer.ubikiri.com/api/'
       });
     });
 
@@ -124,6 +124,23 @@ describe('CilUtils', () => {
       utils._sleep = async () => {};
 
       await utils.waitTxDone('fakeHash');
+    });
+
+    it('should be successful (isTxDoneExplorer)', async () => {
+      utils.queryApi = sinon.fake.resolves(
+          {"status": "stable", "block": "c0c48121d5adaa123ce17b9e3f9307b0dcc35c1399fb2dfb548b573ee21838da"});
+
+      const result = await utils.isTxDoneExplorer('8f94c8c152fd6b13f9d34ded6b30f03680db2a90e5f2561d451a84b5d593672f');
+
+      assert.isOk(result);
+    });
+
+    it('should fail (isTxDoneExplorer)', async () => {
+      utils.queryApi = sinon.fake.throws({"error": "tx not found"});
+
+      const result = await utils.isTxDoneExplorer('1194c8c152fd6b13f9d34ded6b30f03680db2a90e5f2561d451a84b5d593672f');
+
+      assert.isNotOk(result);
     });
   });
 
