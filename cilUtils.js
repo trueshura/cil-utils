@@ -173,11 +173,24 @@ class CilUtils {
   }
 
   async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false) {
+    this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, false);
+  }
+
+  async waitTxDoneExplorer(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false) {
+    this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, true);
+  }
+
+  async _waitCommon(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false, bUseApi) {
     const nSecondsBetweenAttempts = 60;
     const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;
 
     for (let i = 0; i < nAttempts; i++) {
-      if (await this.isTxDone(strTxHash, bContractCall)) return true;
+      if (bUseApi) {
+        if (await this.isTxDoneExplorer(strTxHash, bContractCall)) return true;
+      } else {
+        if (await this.isTxDone(strTxHash, bContractCall)) return true;
+      }
+
 //      console.log(`Still not confirmed. Attempt "${i + 1}". Sleeping`);
       await this._sleep(nSecondsBetweenAttempts * 1000);
     }

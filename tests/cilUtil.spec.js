@@ -112,7 +112,7 @@ describe('CilUtils', () => {
     afterEach(async () => {
     });
 
-    it('should getDone', async () => {
+    it('should waitTxDone', async () => {
       utils._explorerHasUtxo = sinon.fake.resolves(true);
       let nAttempt = 3;
       utils._client = {
@@ -124,6 +124,22 @@ describe('CilUtils', () => {
       utils._sleep = async () => {};
 
       await utils.waitTxDone('fakeHash');
+    });
+
+    it('should waitTxDoneExplorer', async () => {
+      let nAttempt = 3;
+      utils.queryApi = async () => {
+        if (!--nAttempt) {
+          return {
+            "status": "stable",
+            "block": "c0c48121d5adaa123ce17b9e3f9307b0dcc35c1399fb2dfb548b573ee21838da"
+          };
+        }
+        return {result: {}};
+      };
+      utils._sleep = async () => {console.log('Fake sleep');};
+
+      await utils.waitTxDoneExplorer('fakeHash');
     });
 
     it('should be successful (isTxDoneExplorer)', async () => {
