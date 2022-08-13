@@ -128,12 +128,10 @@ describe('CilUtils', () => {
 
     it('should waitTxDoneExplorer', async () => {
       let nAttempt = 3;
-      utils.queryApi = async () => {
+      utils._explorerHasUtxo = sinon.fake.resolves(true);
+      utils.isTxDoneExplorer = async () => {
         if (!--nAttempt) {
-          return {
-            "status": "stable",
-            "block": "c0c48121d5adaa123ce17b9e3f9307b0dcc35c1399fb2dfb548b573ee21838da"
-          };
+          return true;
         }
         return {result: {}};
       };
@@ -142,7 +140,36 @@ describe('CilUtils', () => {
       await utils.waitTxDoneExplorer('fakeHash');
     });
 
-    it('should be successful (isTxDoneExplorer)', async () => {
+    it('should fail (isTxDoneExplorer) for contract call', async () => {
+      utils._explorerHasUtxo = sinon.fake();
+
+      const objFakeTx = {
+        "status": "stable",
+        "block": "0e492eccb2ea937ccf9df3de02ba4395a7223569c7221d80295497040254509e",
+        "tx": {
+          "claimProofs": [],
+          "payload": {
+            "version": 1,
+            "сonciliumId": 1,
+            "outs": [
+              {
+                "intTx": []
+              }
+            ]
+          }
+        }
+      };
+
+      utils.queryApi = sinon.fake.resolves(objFakeTx);
+
+      const result = await utils.isTxDoneExplorer('fake', true);
+
+      assert.isNotOk(result);
+    });
+
+    it('should success (isTxDoneExplorer) for contract call', async () => {
+      utils._explorerHasUtxo = sinon.fake();
+
       const objFakeTx = {
         "status": "stable",
         "block": "0e492eccb2ea937ccf9df3de02ba4395a7223569c7221d80295497040254509e",
@@ -168,9 +195,10 @@ describe('CilUtils', () => {
 
       utils.queryApi = sinon.fake.resolves(objFakeTx);
 
-      const result = await utils.isTxDoneExplorer('8f94c8c152fd6b13f9d34ded6b30f03680db2a90e5f2561d451a84b5d593672f');
+      const result = await utils.isTxDoneExplorer('fake', true);
 
       assert.isOk(result);
+      assert.equal(utils._explorerHasUtxo.callCount, 0);
     });
 
     it('should fail (isTxDoneExplorer)', async () => {

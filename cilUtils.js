@@ -165,11 +165,13 @@ class CilUtils {
    * @returns {Promise<boolean>}
    */
   async isTxDoneExplorer(strTxHash, bContractCall) {
-    const bHasInternalTx = (objResult) => objResult.tx.payload.outs.length && objResult.tx.payload.outs[0].intTx.length;
+    const hasInternalTx = (objResult) => !!(objResult.tx.payload.outs.length &&
+                                            objResult.tx.payload.outs[0].intTx.length);
 
     try {
       const objResult = await this.queryApi('Transaction', strTxHash);
-      return objResult.status === 'stable' && objResult.block && bHasInternalTx(objResult);
+      const bHasTx = !!(objResult.status === 'stable' && objResult.block);
+      return bHasTx && (bContractCall ? hasInternalTx(objResult) : await this._explorerHasUtxo(strTxHash));
     } catch (e) {
       return false;
     }
@@ -183,7 +185,7 @@ class CilUtils {
     this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, true);
   }
 
-  async _waitCommon(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false, bUseApi) {
+  async _waitCommon(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall, bUseApi) {
     const nSecondsBetweenAttempts = 60;
     const nAttempts = parseInt(nHoldoffSeconds / nSecondsBetweenAttempts) + 1;
 
