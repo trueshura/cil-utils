@@ -143,8 +143,30 @@ describe('CilUtils', () => {
     });
 
     it('should be successful (isTxDoneExplorer)', async () => {
-      utils.queryApi = sinon.fake.resolves(
-          {"status": "stable", "block": "c0c48121d5adaa123ce17b9e3f9307b0dcc35c1399fb2dfb548b573ee21838da"});
+      const objFakeTx = {
+        "status": "stable",
+        "block": "0e492eccb2ea937ccf9df3de02ba4395a7223569c7221d80295497040254509e",
+        "tx": {
+          "claimProofs": [],
+          "payload": {
+            "version": 1,
+            "сonciliumId": 1,
+            "outs": [
+              {
+                "intTx": [
+                  {
+                    "intTxHash": "dea14d1a4b9f6641d5df2fae1f67354bc8e6b5574daebcac60d12f981f05fac7",
+                    "status": "ok",
+                    "message": ""
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      };
+
+      utils.queryApi = sinon.fake.resolves(objFakeTx);
 
       const result = await utils.isTxDoneExplorer('8f94c8c152fd6b13f9d34ded6b30f03680db2a90e5f2561d451a84b5d593672f');
 

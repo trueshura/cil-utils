@@ -161,12 +161,15 @@ class CilUtils {
   /**
    *
    * @param strTxHash
+   * @param bContractCall - если это вызов контракта, то в эксплорере будет internalTx
    * @returns {Promise<boolean>}
    */
-  async isTxDoneExplorer(strTxHash) {
+  async isTxDoneExplorer(strTxHash, bContractCall) {
+    const bHasInternalTx = (objResult) => objResult.tx.payload.outs.length && objResult.tx.payload.outs[0].intTx.length;
+
     try {
       const objResult = await this.queryApi('Transaction', strTxHash);
-      return objResult.status === 'stable' && objResult.block;
+      return objResult.status === 'stable' && objResult.block && bHasInternalTx(objResult);
     } catch (e) {
       return false;
     }
