@@ -178,11 +178,11 @@ class CilUtils {
   }
 
   async waitTxDone(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false) {
-    this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, false);
+    await this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, false);
   }
 
   async waitTxDoneExplorer(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall = false) {
-    this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, true);
+    await this._waitCommon(strTxHash, nHoldoffSeconds, bContractCall, true);
   }
 
   async _waitCommon(strTxHash, nHoldoffSeconds = 10 * 60, bContractCall, bUseApi) {

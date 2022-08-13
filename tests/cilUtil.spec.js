@@ -112,50 +112,23 @@ describe('CilUtils', () => {
     afterEach(async () => {
     });
 
-    it('should waitTxDone', async () => {
-      utils._explorerHasUtxo = sinon.fake.resolves(true);
-      let nAttempt = 3;
-      utils._client = {
-        request: async () => {
-          if (!--nAttempt) return {result: {status: 'confirmed'}};
-          return {result: {}};
-        }
-      };
-      utils._sleep = async () => {};
-
-      await utils.waitTxDone('fakeHash');
-    });
-
-    it('should waitTxDoneExplorer', async () => {
-      let nAttempt = 3;
-      utils._explorerHasUtxo = sinon.fake.resolves(true);
-      utils.isTxDoneExplorer = async () => {
-        if (!--nAttempt) {
-          return true;
-        }
-        return {result: {}};
-      };
-      utils._sleep = async () => {console.log('Fake sleep');};
-
-      await utils.waitTxDoneExplorer('fakeHash');
-    });
-
     it('should fail (isTxDoneExplorer) for contract call', async () => {
       utils._explorerHasUtxo = sinon.fake();
 
       const objFakeTx = {
         "status": "stable",
-        "block": "0e492eccb2ea937ccf9df3de02ba4395a7223569c7221d80295497040254509e",
+        "block": "db4b82533bbe91be8afed47e9570b34f940b8cbb9810dddb8e3e0611894e352e",
         "tx": {
           "claimProofs": [],
           "payload": {
             "version": 1,
             "сonciliumId": 1,
+            "ins": [{"txHash": "6de6185cfd62d779c535b790821fc72651cd34e74a5aea3ed0d75cb17478fdc5", "nTxOutput": 0}],
             "outs": [
               {
-                "intTx": []
-              }
-            ]
+                "intTx": [],
+                "tokenTransfer": null
+              }]
           }
         }
       };
@@ -207,6 +180,50 @@ describe('CilUtils', () => {
       const result = await utils.isTxDoneExplorer('1194c8c152fd6b13f9d34ded6b30f03680db2a90e5f2561d451a84b5d593672f');
 
       assert.isNotOk(result);
+    });
+
+    it('should waitTxDone', async () => {
+      utils._explorerHasUtxo = sinon.fake.resolves(true);
+      let nAttempt = 3;
+      utils._client = {
+        request: async () => {
+          if (!--nAttempt) return {result: {status: 'confirmed'}};
+          return {result: {}};
+        }
+      };
+      utils._sleep = async () => {};
+
+      await utils.waitTxDone('fakeHash');
+    });
+
+    it('should waitTxDoneExplorer', async () => {
+      let nAttempt = 3;
+      utils._explorerHasUtxo = sinon.fake.resolves(true);
+      utils.isTxDoneExplorer = async () => {
+        if (!--nAttempt) {
+          return true;
+        }
+        return false;
+      };
+      utils._sleep = async () => {console.log('Fake sleep');};
+
+      await utils.waitTxDoneExplorer('fakeHash');
+    });
+
+    it('should fail waitTxDoneExplorer', async () => {
+      utils._explorerHasUtxo = sinon.fake.resolves(true);
+      utils.isTxDoneExplorer = async () => {
+        return false;
+      };
+      utils._sleep = async () => {console.log('Fake sleep');};
+
+      try {
+        await utils.waitTxDoneExplorer('fakeHash');
+      } catch (e) {
+        return;
+      }
+
+      assert('Unexpected success');
     });
   });
 
