@@ -31,17 +31,18 @@ class CilUtils {
     assert(apiUrl || rpcAddress, 'Specify apiUrl or rpcAddress (ENV)');
     assert(rpcPort, 'Specify rpcPort');
 
-    this._client = rpc.client.http({host: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
+    const fClient = rpcPort === 443 ? rpc.client.https : rpc.client.http;
+    this._client = fClient({host: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
     this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
 
     this._loadedPromise = factory.asyncLoad()
-      .then(_ => {
-        this._nFeeDeploy = nFeeDeploy || factory.Constants.fees.CONTRACT_CREATION_FEE;
-        this._nFeeInvoke = nFeeInvoke || factory.Constants.fees.CONTRACT_INVOCATION_FEE;
-        this._nFeePerInputOutput = nFeePerInputOutput || factory.Constants.fees.TX_FEE * 0.12;
-        this._nFeePerInputNoSign = factory.Constants.fees.TX_FEE * 0.04;
-      })
-      .catch(err => {
+        .then(_ => {
+          this._nFeeDeploy = nFeeDeploy || factory.Constants.fees.CONTRACT_CREATION_FEE;
+          this._nFeeInvoke = nFeeInvoke || factory.Constants.fees.CONTRACT_INVOCATION_FEE;
+          this._nFeePerInputOutput = nFeePerInputOutput || factory.Constants.fees.TX_FEE * 0.12;
+          this._nFeePerInputNoSign = factory.Constants.fees.TX_FEE * 0.04;
+        })
+        .catch(err => {
         console.error(err);
         process.exit(1);
       });

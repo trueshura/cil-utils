@@ -1,9 +1,9 @@
 {
   "name": "cil-utils",
   "main": "cilUtils.js",
-  "version": "0.3.4",
+  "version": "0.4.0",
   "dependencies": {
-    "chain-in-law": "git+https://github.com/SilentNotaryEcosystem/Cil-core.git#master",
+    "chain-in-law": "github:SilentNotaryEcosystem/Cil-core#dev",
     "command-line-args": "^5.1.1",
     "jayson": "^3.0.2",
     "request": "^2.88.0",
