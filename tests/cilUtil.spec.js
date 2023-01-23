@@ -183,7 +183,6 @@ describe('CilUtils', () => {
     });
 
     it('should waitTxDone', async () => {
-      utils._explorerHasUtxo = sinon.fake.resolves(true);
       let nAttempt = 3;
       utils._client = {
         request: async () => {
@@ -194,6 +193,19 @@ describe('CilUtils', () => {
       utils._sleep = async () => {};
 
       await utils.waitTxDone('fakeHash');
+    });
+
+    it('should waitTxDone (contract)', async () => {
+      let nAttempt = 3;
+      utils._client = {
+        request: async () => {
+          if (!--nAttempt) return {result: {status: 1}};
+          return {result: {}};
+        }
+      };
+      utils._sleep = async () => {};
+
+      await utils.waitTxDone('fakeHash', 400, true);
     });
 
     it('should waitTxDoneExplorer', async () => {

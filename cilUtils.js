@@ -43,9 +43,9 @@ class CilUtils {
           this._nFeePerInputNoSign = factory.Constants.fees.TX_FEE * 0.04;
         })
         .catch(err => {
-        console.error(err);
-        process.exit(1);
-      });
+          console.error(err);
+          process.exit(1);
+        });
 
     this._apiUrl = apiUrl;
   }
@@ -151,12 +151,20 @@ class CilUtils {
   /**
    *
    * @param strTxHash
-   * @param bContractCall - если это вызов контракта, то в эксплорере не будет UTXO
+   * @param bContractCall
    * @returns {Promise<boolean>}
    */
   async isTxDone(strTxHash, bContractCall) {
-    const {result} = await this._client.request('getTx', {strTxHash});
-    return result && result.status === 'confirmed' && (bContractCall || await this._explorerHasUtxo(strTxHash));
+    try {
+      const strMethod = bContractCall ? 'getTxReceipt' : 'getTx';
+      const statusToCheck = bContractCall ? 1 : 'confirmed';
+      const {result} = await this._client.request(strMethod, {strTxHash});
+
+      return result && result.status === statusToCheck;
+    } catch (e) {
+      console.error(e);
+      return false;
+    }
   }
 
   /**
@@ -219,14 +227,14 @@ class CilUtils {
   stripAddressPrefix(strAddr) {
     const prefix = factory.Constants.ADDRESS_PREFIX;
     return strAddr.substring(0, 2) === prefix ?
-      strAddr.substring(prefix.length)
-      : strAddr;
+        strAddr.substring(prefix.length)
+        : strAddr;
   }
 
   async queryRpcMethod(strName, objParams) {
     const res = await this._client.request(
-      strName,
-      objParams
+        strName,
+        objParams
     );
     if (res.error) throw res.error;
     if (res.result) return res.result;
@@ -266,8 +274,8 @@ class CilUtils {
     const nInputsCount = tx.inputs ? tx.inputs.length : 0;
     assert(nInputsCount > 0, 'No inputs in tx!');
     return bOneSignature ?
-      this._nFeePerInputNoSign * (nInputsCount) + this._nFeePerInputOutput * (nOutputsCount + (bWithChange ? 1 : 0)) :
-      this._nFeePerInputOutput * (nOutputsCount + nInputsCount + (bWithChange ? 1 : 0));
+        this._nFeePerInputNoSign * (nInputsCount) + this._nFeePerInputOutput * (nOutputsCount + (bWithChange ? 1 : 0)) :
+        this._nFeePerInputOutput * (nOutputsCount + nInputsCount + (bWithChange ? 1 : 0));
   }
 
   /**
@@ -281,8 +289,8 @@ class CilUtils {
     assert(nInputsCount > 0, 'No inputs in tx!');
     assert(nOutputsCount > 0, 'No outputs in tx!');
     return bOneSignature ?
-      this._nFeePerInputNoSign * nInputsCount + this._nFeePerInputOutput * nOutputsCount :
-      this._nFeePerInputOutput * (nOutputsCount + nInputsCount);
+        this._nFeePerInputNoSign * nInputsCount + this._nFeePerInputOutput * nOutputsCount :
+        this._nFeePerInputOutput * (nOutputsCount + nInputsCount);
 
   }
 
