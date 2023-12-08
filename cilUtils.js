@@ -1,8 +1,7 @@
-const url = require('url');
-const assert = require('assert');
-const rpc = require('jayson/promise');
-const rp = require('request-promise');
-const factory = require('chain-in-law');
+const RPC = require('./misc/rpc-client');
+const axios = require('axios');
+const factory = require('./factory');
+const {assert} = require('./misc/misc');
 
 const sleep = (delay) => {
   return new Promise(resolve => {
@@ -31,8 +30,8 @@ class CilUtils {
     assert(apiUrl || rpcAddress, 'Specify apiUrl or rpcAddress (ENV)');
     assert(rpcPort, 'Specify rpcPort');
 
-    const fClient = rpcPort === 443 ? rpc.client.https : rpc.client.http;
-    this._client = fClient({host: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
+//    const fClient = rpcPort === 443 ? rpc.client.https : rpc.client.http;
+      this._client = new RPC({url: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
     this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
 
     this._loadedPromise = factory.asyncLoad()
@@ -248,12 +247,13 @@ class CilUtils {
     const options = {
       method: "GET",
       rejectUnauthorized: false,
-      url: url.resolve(this._apiUrl, `${endpoint}/${strParam}`),
+        // TODO: посмотреть-разобраться
+        url: this._apiUrl + `${endpoint}/${strParam}`,
       json: true
     };
 
-    const result = await rp(options);
-    return typeof result === 'string' ? JSON.parse(result) : result;
+      const result = await axios(options);
+      return typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
   }
 
   /**

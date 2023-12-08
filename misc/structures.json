@@ -1,0 +1,256 @@
+{
+  "nested": {
+    "structures": {
+      "nested": {
+        "input": {
+          "fields": {
+            "txHash": {
+              "type": "bytes",
+              "id": 1
+            },
+            "nTxOutput": {
+              "type": "uint32",
+              "id": 2
+            }
+          }
+        },
+        "output": {
+          "fields": {
+            "amount": {
+              "type": "fixed64",
+              "id": 1
+            },
+            "receiverAddr": {
+              "type": "bytes",
+              "id": 2
+            },
+            "contractCode": {
+              "type": "string",
+              "id": 3
+            },
+            "addrChangeReceiver": {
+              "type": "bytes",
+              "id": 4
+            }
+          }
+        },
+        "TransactionPayload": {
+          "fields": {
+            "version": {
+              "type": "uint32",
+              "id": 3
+            },
+            "witnessGroupId": {
+              "type": "uint32",
+              "id": 4
+            },
+            "ins": {
+              "rule": "repeated",
+              "type": "input",
+              "id": 1
+            },
+            "outs": {
+              "rule": "repeated",
+              "type": "output",
+              "id": 2
+            }
+          }
+        },
+        "Transaction": {
+          "fields": {
+            "payload": {
+              "type": "TransactionPayload",
+              "id": 1
+            },
+            "claimProofs": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 2
+            },
+            "txSignature": {
+              "type": "bytes",
+              "id": 3
+            }
+          }
+        },
+        "BlockHeader": {
+          "fields": {
+            "parentHashes": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 1
+            },
+            "merkleRoot": {
+              "type": "bytes",
+              "id": 2
+            },
+            "witnessGroupId": {
+              "type": "uint32",
+              "id": 3
+            },
+            "timestamp": {
+              "type": "uint32",
+              "id": 6
+            },
+            "version": {
+              "type": "uint32",
+              "id": 7
+            }
+          }
+        },
+        "Block": {
+          "fields": {
+            "header": {
+              "type": "BlockHeader",
+              "id": 1
+            },
+            "txns": {
+              "rule": "repeated",
+              "type": "Transaction",
+              "id": 2
+            },
+            "signatures": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 3
+            }
+          }
+        },
+        "InventoryTypes": {
+          "values": {
+            "INV_TX": 11,
+            "INV_BLOCK": 21
+          }
+        },
+        "InventoryVector": {
+          "fields": {
+            "type": {
+              "type": "InventoryTypes",
+              "id": 1
+            },
+            "hash": {
+              "type": "bytes",
+              "id": 2
+            }
+          }
+        },
+        "Inventory": {
+          "fields": {
+            "invVector": {
+              "rule": "repeated",
+              "type": "InventoryVector",
+              "id": 1
+            }
+          }
+        },
+        "UTXO": {
+          "fields": {
+            "arrIndexes": {
+              "rule": "repeated",
+              "type": "uint32",
+              "id": 1
+            },
+            "arrOutputs": {
+              "rule": "repeated",
+              "type": "output",
+              "id": 2
+            }
+          }
+        },
+        "WitnessGroupDefinition": {
+          "fields": {
+            "publicKeys": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 1
+            },
+            "groupId": {
+              "type": "uint32",
+              "id": 3
+            },
+            "quorum": {
+              "type": "uint32",
+              "id": 4
+            },
+            "minFee": {
+              "type": "uint32",
+              "id": 5
+            },
+            "contractMultiplier": {
+              "type": "uint32",
+              "id": 6
+            },
+            "delegatesPublicKeys": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 7
+            }
+          }
+        },
+        "BlockInfo": {
+          "fields": {
+            "header": {
+              "type": "BlockHeader",
+              "id": 1
+            },
+            "flags": {
+              "type": "uint32",
+              "id": 2
+            }
+          }
+        },
+        "Contract": {
+          "fields": {
+            "contractData": {
+              "type": "bytes",
+              "id": 1
+            },
+            "contractCode": {
+              "type": "string",
+              "id": 2
+            },
+            "groupId": {
+              "type": "uint32",
+              "id": 3
+            },
+            "balance": {
+              "type": "fixed64",
+              "id": 4
+            }
+          }
+        },
+        "TxStatuses": {
+          "values": {
+            "TX_STATUS_FAILED": 0,
+            "TX_STATUS_OK": 1
+          }
+        },
+        "TxReceipt": {
+          "fields": {
+            "contractAddress": {
+              "type": "bytes",
+              "id": 1
+            },
+            "coinsUsed": {
+              "type": "uint32",
+              "id": 2
+            },
+            "status": {
+              "type": "TxStatuses",
+              "id": 3
+            },
+            "message": {
+              "type": "string",
+              "id": 5
+            },
+            "internalTxns": {
+              "rule": "repeated",
+              "type": "bytes",
+              "id": 4
+            }
+          }
+        }
+      }
+    }
+  }
+}

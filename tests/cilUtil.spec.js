@@ -30,6 +30,8 @@ describe('CilUtils', () => {
       rpcAddress: 'localhost',
       apiUrl: 'dummy'
     });
+      console.log('here!');
+
   });
 
   it('should create class', async () => {
@@ -340,8 +342,10 @@ describe('CilUtils', () => {
     assert.equal(tx.inputs.length, 2);
     assert.equal(tx.outputs.length, 2 * nOutputs);
 
-    // it exclude change
+      // it should exclude change
     assert.equal(tx.amountOut(), 2 * amount - nManualFee);
+
+      console.log(tx.encode().toString('hex'));
   });
 
 //  it('should createTxInvokeContract', async () => {
