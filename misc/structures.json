@@ -40,7 +40,7 @@
               "type": "uint32",
               "id": 3
             },
-            "witnessGroupId": {
+            "conciliumId": {
               "type": "uint32",
               "id": 4
             },
@@ -84,7 +84,7 @@
               "type": "bytes",
               "id": 2
             },
-            "witnessGroupId": {
+            "conciliumId": {
               "type": "uint32",
               "id": 3
             },
@@ -95,6 +95,10 @@
             "version": {
               "type": "uint32",
               "id": 7
+            },
+            "height": {
+              "type": "uint32",
+              "id": 8
             }
           }
         },

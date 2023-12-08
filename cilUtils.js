@@ -1,3 +1,4 @@
+const Buffer = require("buffer/").Buffer;
 const RPC = require('./misc/rpc-client');
 const axios = require('axios');
 const factory = require('./factory');
@@ -53,6 +54,88 @@ class CilUtils {
     return this._loadedPromise;
   }
 
+  /**
+   *
+   * @param strAddr
+   * @returns {Promise<Number>} like 100
+   */
+  async getBalance(strAddr) {
+    const {balance} = await this.queryApi('Balance', strAddr);
+    return balance;
+  }
+
+  /**
+   *
+   * @param strAddr
+   * @param strToken
+   * @returns {Promise<Number>} or NaN if token isn't found
+   */
+  async getTokenBalance(strAddr, strToken) {
+    const arrResult = await this.queryApi('Token/Balances', strAddr);
+    const objResult = arrResult.find(objRecord => objRecord.symbol === strToken);
+    return objResult ? parseFloat(objResult.balance) : NaN;
+  }
+
+  /**
+   * Bundled version for send coins
+   *
+   * @param {Array} arrReceivers - [[strReceiver, nAmount]]
+   * @param {Number} nConciliumId
+   * @returns {Promise<Transaction>} You can send it via sendTx
+   */
+  async createSendCoinsTx(arrReceivers, nConciliumId = 1) {
+    const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
+    const arrUtxos = await this.getUtxos();
+    const {arrCoins, gathered} = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+    const tx = await this.createTxWithFunds({
+      arrReceivers,
+      nConciliumId,
+      arrCoins,
+      gatheredAmount: gathered,
+      nOutputs: 1
+    });
+
+    return tx;
+  }
+
+  /**
+   *
+   * @param {String} strAddrReceiver
+   * @param {Number} nAmount
+   * @param {String} strToken
+   * @param {String} strContractAddr
+   * @param {Number} nConciliumId
+   * @returns {Promise<Transaction>}
+   */
+  async createSendTokenTx(strAddrReceiver, nAmount, strToken, strContractAddr, nConciliumId = 1) {
+    const contractCode = {
+      method: 'transfer',
+      arrArguments: [
+        strToken,
+        this.stripAddressPrefix(strAddrReceiver),
+        nAmount
+      ]
+    };
+
+    const tx = factory.Transaction.invokeContract(
+      this.stripAddressPrefix(strContractAddr),
+      contractCode,
+      0,
+      this._kpFunds.address
+    );
+    tx.conciliumId = nConciliumId;
+
+    const arrUtxos = await this.getUtxos();
+    const {arrCoins} = this.gatherInputsForContractCall(arrUtxos);
+
+    for (let utxo of arrCoins) {
+      tx.addInput(utxo.hash, utxo.nOut);
+    }
+
+    tx.signForContract(this._kpFunds.privateKey);
+
+    return tx;
+  }
   async createTxWithFunds({
                             arrCoins,
                             gatheredAmount,
