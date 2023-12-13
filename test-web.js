@@ -1,4 +1,5 @@
 const CilUtils = require('./cilUtils');
+const crypto = require('crypto-web');
 
 main().then(() => {
 }).catch((error) => {
@@ -18,6 +19,9 @@ async function main() {
   });
 
   await utils.asyncLoaded();
+
+  const kp = crypto.createKeyPair();
+  console.log(kp.privateKey);
 
   const result = await utils.queryApi('Unspent', '0d5ab318f38a8e4faed56d625a677ba481c9022b');
   console.dir(result, {colors: true, depth: null});
