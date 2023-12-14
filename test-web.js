@@ -26,20 +26,27 @@ async function main() {
 
   await utils.asyncLoaded();
 
-  // Low level calls
-  const result = await utils.queryApi('Unspent', '0d5ab318f38a8e4faed56d625a677ba481c9022b');
-  console.dir(result, {colors: true, depth: null});
-
-  const rpcResult = await utils.queryRpcMethod('getTips', {});
-  console.dir(rpcResult, {colors: true, depth: null});
+//  // Low level calls
+//  const result = await utils.queryApi('Unspent', '0d5ab318f38a8e4faed56d625a677ba481c9022b');
+//  console.dir(result, {colors: true, depth: null});
+//
+//  const rpcResult = await utils.queryRpcMethod('getTips', {});
+//  console.dir(rpcResult, {colors: true, depth: null});
 
   // existed token
   const objTokenData = await utils.getTokenBalance('0d5ab318f38a8e4faed56d625a677ba481c9022b', 'WAF');
+  console.dir(objTokenData, {colors: true, depth: null});
 
   // non-existed token
   const objTokenData2 = await utils.getTokenBalance('0d5ab318f38a8e4faed56d625a677ba481c9022b', 'ZZZ');
-  console.dir(objTokenData, {colors: true, depth: null});
   console.dir(objTokenData2, {colors: true, depth: null});
+
+  // all token for stored PK
+  const arrTokenData3 = await utils.getTokenBalance();
+  console.dir(arrTokenData3, {colors: true, depth: null});  // all token for stored PK
+
+  const nBalance = await utils.getBalance();
+  console.log(nBalance);
 
   // Можно отправить сразу нескольким адресатам в 1 транзакции. Она будет сразу подписана.
   const txFunds = await utils.createSendCoinsTx([

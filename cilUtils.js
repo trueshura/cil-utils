@@ -55,23 +55,29 @@ class CilUtils {
   }
 
   /**
+   * Получить балан монеты
    *
-   * @param strAddr
-   * @returns {Promise<Number>} like 100
+   * @param {String} strAddr - если не указан - будет использован кошелек заданный в конструкторе   * @returns {Promise<Number>} like 100
    */
   async getBalance(strAddr) {
-    const {balance} = await this.queryApi('Balance', strAddr);
+    const strAddrToQuery = strAddr || this._kpFunds.address;
+    const {balance} = await this.queryApi('Balance', strAddrToQuery);
     return balance;
   }
 
   /**
+   * Получить балан токена(ов)
    *
-   * @param strAddr
-   * @param strToken
+   * @param {String} strAddr - если не указан - будет использован кошелек заданный в конструкторе
+   * @param {String} strToken - если не указан, вернется баланс по всем токенам
    * @returns {Promise<Number>} or NaN if token isn't found
    */
   async getTokenBalance(strAddr, strToken) {
-    const arrResult = await this.queryApi('Token/Balances', strAddr);
+    const strAddrToQuery = strAddr || this._kpFunds.address;
+
+    const arrResult = await this.queryApi('Token/Balances', strAddrToQuery);
+    if(!strToken) return arrResult;
+
     const objResult = arrResult.find(objRecord => objRecord.symbol === strToken);
     return objResult ? parseFloat(objResult.balance) : NaN;
   }
