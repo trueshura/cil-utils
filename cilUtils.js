@@ -242,7 +242,7 @@ class CilUtils {
     }
   }
 
-  async getTXTokensList (){
+  async getTokensTXList (){
     try {
       return await this.queryApi('Token/Transactions', this._kpFunds.address);
     } catch (e) {

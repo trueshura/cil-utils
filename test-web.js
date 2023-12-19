@@ -53,7 +53,7 @@ async function main() {
   console.log(txList, 'список транзакций');
 
   //посмотреть список транзакций с токеноми
-  const txTokensList = await utils.getTXTokensList();
+  const txTokensList = await utils.getTokensTXList();
   console.log(txTokensList, 'список транзакций с токеноми');
 
   // Можно отправить сразу нескольким адресатам в 1 транзакции. Она будет сразу подписана.
