@@ -16,7 +16,7 @@ async function main() {
 
     // Обратить внимание, что тут тестовая сеть
     // Для нескольких колешьков нужно будет создать несколько инстансов CilUtils
-    privateKey: kp.privateKey,
+    privateKey: '5fa64c78148ebcfc7048a4a22caaacfe5b12fac4f62d3fcdffc994bf8edb2a59',
     apiUrl: 'https://test-explorer.ubikiri.com/api/',
     rpcPort: 443,
     rpcAddress: 'https://rpc-dv-1.ubikiri.com/',
@@ -51,6 +51,10 @@ async function main() {
   //посмотреть список транзакций
   const txList = await utils.getTXList();
   console.log(txList, 'список транзакций');
+
+  //посмотреть список транзакций с токеноми
+  const txTokensList = await utils.getTXTokensList();
+  console.log(txTokensList, 'список транзакций с токеноми');
 
   // Можно отправить сразу нескольким адресатам в 1 транзакции. Она будет сразу подписана.
   const txFunds = await utils.createSendCoinsTx([

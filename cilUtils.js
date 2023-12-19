@@ -241,6 +241,15 @@ class CilUtils {
       return []
     }
   }
+
+  async getTXTokensList (){
+    try {
+      return await this.queryApi('Token/Transactions', this._kpFunds.address);
+    } catch (e) {
+      console.error(e)
+      return []
+    }
+  }
   async sendTx(tx) {
     await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
   }
