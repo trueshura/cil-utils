@@ -1,6 +1,6 @@
 const Buffer = require("buffer/").Buffer;
 const RPC = require('./misc/rpc-client');
-const axios = require('axios');
+const axios = require('axios').default;
 const factory = require('./factory');
 const {assert} = require('./misc/misc');
 
@@ -32,7 +32,7 @@ class CilUtils {
     assert(rpcPort, 'Specify rpcPort');
 
 //    const fClient = rpcPort === 443 ? rpc.client.https : rpc.client.http;
-      this._client = new RPC({url: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
+    this._client = new RPC({url: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
     this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
 
     this._loadedPromise = factory.asyncLoad()
@@ -124,10 +124,10 @@ class CilUtils {
     };
 
     const tx = factory.Transaction.invokeContract(
-      this.stripAddressPrefix(strContractAddr),
-      contractCode,
-      0,
-      this._kpFunds.address
+        this.stripAddressPrefix(strContractAddr),
+        contractCode,
+        0,
+        this._kpFunds.address
     );
     tx.conciliumId = nConciliumId;
 
@@ -232,6 +232,15 @@ class CilUtils {
     return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne, bBigFirst);
   }
 
+  async getTXList (){
+    try {
+      const {txInfoDTOs} = await this.queryApi('Address', this._kpFunds.address);
+      return txInfoDTOs
+    } catch (e) {
+      console.error(e)
+      return []
+    }
+  }
   async sendTx(tx) {
     await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
   }
@@ -263,7 +272,7 @@ class CilUtils {
    */
   async isTxDoneExplorer(strTxHash, bContractCall) {
     const hasInternalTx = (objResult) => !!(objResult.tx.payload.outs.length &&
-                                            objResult.tx.payload.outs[0].intTx.length);
+        objResult.tx.payload.outs[0].intTx.length);
 
     try {
       const objResult = await this.queryApi('Transaction', strTxHash);
@@ -336,13 +345,13 @@ class CilUtils {
     const options = {
       method: "GET",
       rejectUnauthorized: false,
-        // TODO: посмотреть-разобраться
-        url: this._apiUrl + `${endpoint}/${strParam}`,
+      // TODO: посмотреть-разобраться
+      url: this._apiUrl + `${endpoint}/${strParam}`,
       json: true
     };
 
-      const result = await axios(options);
-      return typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
+    const result = await axios(options);
+    return typeof result.data === 'string' ? JSON.parse(result.data) : result.data;
   }
 
   /**

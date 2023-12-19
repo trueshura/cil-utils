@@ -8,7 +8,7 @@ main().then(() => {
 
 async function main() {
 
-    // Generate keypair (see https://github.com/trueshura/crypto-web/blob/master/src/port-crypto.js#L19)
+  // Generate keypair (see https://github.com/trueshura/crypto-web/blob/master/src/port-crypto.js#L19)
   const kp = crypto.createKeyPair();
   console.log(kp.privateKey);
 
@@ -16,7 +16,7 @@ async function main() {
 
     // Обратить внимание, что тут тестовая сеть
     // Для нескольких колешьков нужно будет создать несколько инстансов CilUtils
-    privateKey: kp.privateKey,
+    privateKey: 'kp.privateKey',
     apiUrl: 'https://test-explorer.ubikiri.com/api/',
     rpcPort: 443,
     rpcAddress: 'https://rpc-dv-1.ubikiri.com/',
@@ -48,6 +48,10 @@ async function main() {
   const nBalance = await utils.getBalance();
   console.log(nBalance);
 
+  //посмотреть список транзакций
+  const txList = await utils.getTXList();
+  console.log(txList, 'список транзакций');
+
   // Можно отправить сразу нескольким адресатам в 1 транзакции. Она будет сразу подписана.
   const txFunds = await utils.createSendCoinsTx([
     ['Ux1ac4cfe96bd4e2a3df3d5115b75557b9f05d4b86', 1123],
@@ -62,11 +66,11 @@ async function main() {
   // Отправить токены. Если токен или контракт не правильный - все равно вызовется,
   // потратит монеты, но будет ошибка
   const txTokens = await utils.createSendTokenTx(
-    'a'.repeat(40),
-    10,
-    'TST-EM',
-    'Ux5560c0ee0c7ffdc4ccb033056fcc95c1974c3ed1',
-    1
+      'a'.repeat(40),
+      10,
+      'TST-EM',
+      'Ux5560c0ee0c7ffdc4ccb033056fcc95c1974c3ed1',
+      1
   );
 
   // Не забыть отправить ее в сеть
