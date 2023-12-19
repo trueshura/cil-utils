@@ -16,7 +16,7 @@ async function main() {
 
     // Обратить внимание, что тут тестовая сеть
     // Для нескольких колешьков нужно будет создать несколько инстансов CilUtils
-    privateKey: 'kp.privateKey',
+    privateKey: kp.privateKey,
     apiUrl: 'https://test-explorer.ubikiri.com/api/',
     rpcPort: 443,
     rpcAddress: 'https://rpc-dv-1.ubikiri.com/',
