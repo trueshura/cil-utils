@@ -232,24 +232,35 @@ class CilUtils {
     return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne, bBigFirst);
   }
 
-  async getTXList (){
-    try {
-      const {txInfoDTOs} = await this.queryApi('Address', this._kpFunds.address);
-      return txInfoDTOs
-    } catch (e) {
-      console.error(e)
-      return []
-    }
+  /**
+   *
+   * @param {String} strAddress - address to query. if omitted - will use stored wallet
+   * @param {Number} nPage
+   * @returns {Promise<*>} {hash, timestamp, inputs, outputs, value, spending}
+   */
+  async getTXList (strAddress, nPage = 0){
+    const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
+    const {txInfoDTOs} = await this.queryApi('Address', strAddrToQuery, {page: nPage});
+    return txInfoDTOs;
   }
 
-  async getTokensTXList (){
-    try {
-      return await this.queryApi('Token/Transactions', this._kpFunds.address);
-    } catch (e) {
-      console.error(e)
-      return []
-    }
+  /**
+   *
+   * @param {String} strAddress - address to query. if omitted - will use stored wallet
+   * @param {Number} nPage
+   * @returns {Promise<*>} {transactionHash, symbol, from, to, quantity, timestamp}
+   */
+  async getTokensTXList (strAddress, nPage = 0){
+    const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
+    return await this.queryApi('Token/Transactions', strAddrToQuery, {page: nPage});
   }
+
+  /**
+   * Push TX to RPC node
+   *
+   * @param {Transaction} tx
+   * @returns {Promise<void>}
+   */
   async sendTx(tx) {
     await this.queryRpcMethod('sendRawTx', {"strTx": tx.encode().toString('hex')});
   }
@@ -350,13 +361,14 @@ class CilUtils {
     return factory.utils.prepareForStringifyObject(obj);
   }
 
-  async queryApi(endpoint, strParam) {
+  async queryApi(endpoint, strParam, objQueryParams) {
     const options = {
       method: "GET",
       rejectUnauthorized: false,
       // TODO: посмотреть-разобраться
       url: this._apiUrl + `${endpoint}/${strParam}`,
-      json: true
+      json: true,
+      params: objQueryParams
     };
 
     const result = await axios(options);
