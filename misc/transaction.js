@@ -1,4 +1,4 @@
-const protobuf = require("protobufjs");
+const { Root } = require("protobufjs/dist/light/protobuf.min");
 const Buffer = require("buffer/").Buffer;
 const jsonDescriptor = require("./structures.json");
 const Crypto = require("crypto-web");
@@ -7,7 +7,7 @@ const {assert} = require('./misc');
 
 const CURRENT_TX_VERSION = 1;
 const MAX_BLOCK_SIZE = 1024 * 1024;
-const root = protobuf.Root.fromJSON(jsonDescriptor);
+const root = Root.fromJSON(jsonDescriptor);
 const transactionProto = root.lookup('Transaction');
 const transactionPayloadProto = root.lookup('TransactionPayload');
 
@@ -24,7 +24,7 @@ class Transaction {
         } else if (data === undefined) {
             this._data = {
                 payload: {
-                  conciliumId: 0,
+                    conciliumId: 0,
                     ins: [],
                     outs: []
                 },
@@ -34,8 +34,8 @@ class Transaction {
             throw new Error('Contruct from Buffer|Object|Empty');
         }
         if (!this._data.payload.version) this._data.payload.version = CURRENT_TX_VERSION;
-      if (this._data.payload.conciliumId === undefined) {
-        throw new Error('Specify conciliumId, who will notarize this TX');
+        if (this._data.payload.conciliumId === undefined) {
+            throw new Error('Specify conciliumId, who will notarize this TX');
         }
 
         // fix fixed64 conversion to Long. see https://github.com/dcodeIO/ProtoBuf.js/
@@ -49,12 +49,12 @@ class Transaction {
         }
     }
 
-  get conciliumId() {
-    return this._data.payload.conciliumId;
+    get conciliumId() {
+        return this._data.payload.conciliumId;
     }
 
-  set conciliumId(conciliumId) {
-    return this._data.payload.conciliumId = conciliumId;
+    set conciliumId(conciliumId) {
+        return this._data.payload.conciliumId = conciliumId;
     }
 
     get rawData() {
@@ -63,24 +63,24 @@ class Transaction {
 
     get inputs() {
         const checkPath = this._data &&
-                          this._data.payload &&
-                          this._data.payload.ins &&
-                          Array.isArray(this._data.payload.ins);
+            this._data.payload &&
+            this._data.payload.ins &&
+            Array.isArray(this._data.payload.ins);
         return checkPath ? this._data.payload.ins : undefined;
     }
 
     get outputs() {
         const checkPath = this._data &&
-                          this._data.payload &&
-                          this._data.payload.outs &&
-                          Array.isArray(this._data.payload.outs);
+            this._data.payload &&
+            this._data.payload.outs &&
+            Array.isArray(this._data.payload.outs);
         return checkPath ? this._data.payload.outs : undefined;
     }
 
     get claimProofs() {
         const checkPath = this._data &&
-                          this._data.claimProofs &&
-                          Array.isArray(this._data.claimProofs);
+            this._data.claimProofs &&
+            Array.isArray(this._data.claimProofs);
         return checkPath ? this._data.claimProofs : undefined;
     }
 
@@ -138,7 +138,7 @@ class Transaction {
             amount,
             receiverAddr: Buffer.from(strContractAddr, 'hex'),
             contractCode: JSON.stringify(objInvokeCode),
-          addrChangeReceiver: Buffer.from(addrChangeReceiver, 'hex')
+            addrChangeReceiver: Buffer.from(addrChangeReceiver, 'hex')
         });
         return tx;
     }
@@ -244,7 +244,7 @@ class Transaction {
 
     getTxSignature() {
         return Buffer.isBuffer(this._data.txSignature) ||
-               (Array.isArray(this._data.txSignature) && this._data.txSignature.length) ?
+        (Array.isArray(this._data.txSignature) && this._data.txSignature.length) ?
             this._data.txSignature : undefined;
     }
 
@@ -266,10 +266,10 @@ class Transaction {
      */
     equals(txToCompare) {
         return this.hash() === txToCompare.hash() &&
-               Array.isArray(this.claimProofs) &&
-               this.claimProofs.every((val, idx) => {
-                   return Buffer.from(val).equals(txToCompare.claimProofs[idx]);
-               });
+            Array.isArray(this.claimProofs) &&
+            this.claimProofs.every((val, idx) => {
+                return Buffer.from(val).equals(txToCompare.claimProofs[idx]);
+            });
     }
 
     encode() {
@@ -278,13 +278,13 @@ class Transaction {
 
     verify() {
 
-      assert(this.conciliumId !== undefined, 'conciliumId undefined');
+        assert(this.conciliumId !== undefined, 'conciliumId undefined');
 
         // check inputs (not a coinbase & nTxOutput - non negative)
         const inputs = this.inputs;
         const insValid = inputs && inputs.length && inputs.every(input => {
             return !input.txHash.equals(Buffer.alloc(32)) &&
-                   input.nTxOutput >= 0;
+                input.nTxOutput >= 0;
         });
 
         assert(insValid, 'Errors in input');
@@ -309,8 +309,8 @@ class Transaction {
     isCoinbase() {
         const inputs = this.inputs;
         return inputs && inputs.length === 1
-               && inputs[0].txHash.equals(Buffer.alloc(32))
-               && inputs[0].nTxOutput === 0;
+            && inputs[0].txHash.equals(Buffer.alloc(32))
+            && inputs[0].nTxOutput === 0;
     }
 
     isContractCreation() {
