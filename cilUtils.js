@@ -176,10 +176,10 @@ class CilUtils {
     if (nConciliumId) tx.conciliumId = nConciliumId;
 
     // сдача есть?
-    let fee = this.calculateTxFee(tx, false, true);
+    let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length, true);
     let change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
     if (change > 0) {
-      fee = this.calculateTxFee(tx);
+      fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length+1, true);
       change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
 
       if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
@@ -217,8 +217,9 @@ class CilUtils {
       gathered += coins.amount;
       arrCoins.push(coins);
       if (bUseOnlyOne) {
-        if (coins.amount > amount) return {arrCoins: [coins], gathered: coins.amount, skip: arrCoins.length};
-      } else if (gathered > amount + this._nFeePerInputOutput * (arrCoins.length + 1)) {
+        const fee = this._estimateTxFee(1, 2, true);
+        if (coins.amount > amount + fee) return {arrCoins: [coins], gathered: coins.amount, skip: arrCoins.length};
+      } else if (gathered > amount + this._estimateTxFee(arrCoins.length, 2, true)) {
         return {
           arrCoins,
           gathered
@@ -228,7 +229,7 @@ class CilUtils {
     throw new Error('Not enough coins!');
   }
 
-  gatherInputsForContractCall(arrUtxos, nFee, bUseOnlyOne = false, bBigFirst = false) {
+  gatherInputsForContractCall(arrUtxos, nFee, bUseOnlyOne = false, bBigFirst = true) {
     return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne, bBigFirst);
   }
 
@@ -388,13 +389,8 @@ class CilUtils {
     }
   }
 
-  calculateTxFee(tx, bWithChange = true, bOneSignature = true) {
-    const nOutputsCount = tx.outputs ? tx.outputs.length : 0;
-    const nInputsCount = tx.inputs ? tx.inputs.length : 0;
-    assert(nInputsCount > 0, 'No inputs in tx!');
-    return bOneSignature ?
-        this._nFeePerInputNoSign * (nInputsCount) + this._nFeePerInputOutput * (nOutputsCount + (bWithChange ? 1 : 0)) :
-        this._nFeePerInputOutput * (nOutputsCount + nInputsCount + (bWithChange ? 1 : 0));
+  _getTransferFee (){
+    return factory.Constants.fees.TX_FEE;
   }
 
   /**
@@ -404,12 +400,24 @@ class CilUtils {
    * @param {Boolean} bOneSignature - будет подписано 1 приватником?
    * @returns {number}
    */
-  estimateTxFee(nInputsCount, nOutputsCount, bOneSignature) {
+  _estimateTxFee(nInputsCount, nOutputsCount, bOneSignature) {
     assert(nInputsCount > 0, 'No inputs in tx!');
     assert(nOutputsCount > 0, 'No outputs in tx!');
-    return bOneSignature ?
-        this._nFeePerInputNoSign * nInputsCount + this._nFeePerInputOutput * nOutputsCount :
-        this._nFeePerInputOutput * (nOutputsCount + nInputsCount);
+
+    // одна подпись - 67
+    // один инпут - 38 или 39 (если nOut больше 256 он будет занимать 2 байта! поэтому 39)
+    // один аутпут - 33
+    const nEmptyTx = 6;
+
+    const nOutByteSize = nOutputsCount * 33;
+    const nInSize = nInputsCount * 39;
+
+    // 1 ключ на все?
+    const nSigSize = bOneSignature ? 67 : nInputsCount * 67;
+
+    const nFee = parseInt(this._getTransferFee() / 1024 * (nEmptyTx + nOutByteSize + nInSize + nSigSize + 2)) + 1;
+
+    return nFee;
 
   }
 
