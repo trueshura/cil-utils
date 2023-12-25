@@ -18,7 +18,7 @@ factory = {
             CONTRACT_CREATION_FEE: 1e4,
 
             // contract invocation
-            CONTRACT_INVOCATION_FEE: 2e4,
+            CONTRACT_INVOCATION_FEE: 4e4,
 
             // contract send moneys
             INTERNAL_TX_FEE: 300,
