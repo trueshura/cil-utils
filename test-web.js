@@ -52,9 +52,19 @@ async function main() {
   const txList = await utils.getTXList();
   console.log(txList, 'список транзакций');
 
+  const txListPage2 = await utils.getTXList(undefined, 2);
+  console.log(txListPage2, 'список транзакций (страница 2 (НЕ 1!!))');
+
   //посмотреть список транзакций с токеноми
   const txTokensList = await utils.getTokensTXList();
   console.log(txTokensList, 'список транзакций с токеноми');
+
+  const txTokensListPage2 = await utils.getTokensTXList(undefined, 2);
+  console.log(txTokensListPage2, 'список транзакций с токеноми (страница 2 (НЕ 1!!))');
+
+  const txTokensListAddr = await utils.getTokensTXList('9dd718fff5671d6cff6be4b15fde1ea286528ea0');
+  console.log(txTokensListAddr, 'список транзакций по указанному адресу');
+
 
   // Можно отправить сразу нескольким адресатам в 1 транзакции. Она будет сразу подписана.
   const txFunds = await utils.createSendCoinsTx([
