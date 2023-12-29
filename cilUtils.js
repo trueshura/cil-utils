@@ -89,7 +89,7 @@ class CilUtils {
      * @param {Number} nConciliumId
      * @returns {Promise<Transaction>} You can send it via sendTx
      */
-    async createSendCoinsTx(arrReceivers, nConciliumId = 1) {
+    async createSendCoinsTx(arrReceivers, nConciliumId = 1, feeParam = false) {
         const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
         const arrUtxos = await this.getUtxos();
         const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
@@ -99,6 +99,7 @@ class CilUtils {
             arrCoins,
             gatheredAmount: gathered,
             nOutputs: 1,
+            feeParam
         });
 
         return tx;
@@ -189,6 +190,7 @@ class CilUtils {
                                 arrReceivers,
                                 manualFee,
                                 nConciliumId,
+                                feeParam = false
                             }) {
         await this._loadedPromise;
 
@@ -231,8 +233,11 @@ class CilUtils {
                 tx.claim(parseInt(i), this._kpFunds.privateKey);
             }
         }
-
-        return tx;
+        if (feeParam) {
+            return fee
+        } else {
+            return tx
+        }
     }
 
     /**
