@@ -231,8 +231,10 @@ class CilUtils {
                 tx.claim(parseInt(i), this._kpFunds.privateKey);
             }
         }
-
-        return tx;
+        console.log(fee);
+        console.log('=======================================');
+        console.log(tx);
+        return {tx, fee}
     }
 
     /**
