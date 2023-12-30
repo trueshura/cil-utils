@@ -180,6 +180,20 @@ class CilUtils {
 
         return tx;
     }
+    /**
+     *
+     * @param {String} sID
+     * @param {String} strContractAddr
+     * @param {Boolean} bCompleted
+     */
+    async getDID (sID, strContractAddr, bCompleted = true) {
+        return await this.queryRpcMethod('constantMethodCall', {
+            'contractAddress': strContractAddr,
+            'method': 'resolve',
+            'arrArguments': [sID],
+            'completed': bCompleted
+        });
+    }
 
     async createTxWithFunds({
                                 arrCoins,
