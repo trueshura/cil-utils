@@ -200,11 +200,11 @@ class CilUtils {
    * @param {String} strContractAddr
    * @param {Boolean} bCompleted
    */
-  async removeDID(sID, strContractAddr, bCompleted = true) {
+  async removeDID(strSocialCode, sID, strContractAddr, bCompleted = true) {
     return await this.queryRpcMethod('constantMethodCall', {
       contractAddress: strContractAddr,
       method: 'remove',
-      arrArguments: [sID],
+      arrArguments: [strSocialCode, sID],
       completed: bCompleted
     })
   }
