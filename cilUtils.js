@@ -194,7 +194,20 @@ class CilUtils {
             'completed': bCompleted
         });
     }
-
+  /**
+   *
+   * @param {String} sID
+   * @param {String} strContractAddr
+   * @param {Boolean} bCompleted
+   */
+  async removeDID(sID, strContractAddr, bCompleted = true) {
+    return await this.queryRpcMethod('constantMethodCall', {
+      contractAddress: strContractAddr,
+      method: 'remove',
+      arrArguments: [sID],
+      completed: bCompleted
+    })
+  }
     async createTxWithFunds({
                                 arrCoins,
                                 gatheredAmount,
