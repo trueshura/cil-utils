@@ -194,19 +194,41 @@ class CilUtils {
             'completed': bCompleted
         });
     }
-  /**
-   *
-   * @param {String} sID
-   * @param {String} strContractAddr
-   * @param {Boolean} bCompleted
-   */
-  async removeDID(strSocialCode, sID, strContractAddr, bCompleted = true) {
-    return await this.queryRpcMethod('constantMethodCall', {
-      contractAddress: strContractAddr,
-      method: 'remove',
-      arrArguments: [strSocialCode, sID],
-      completed: bCompleted
-    })
+    /**
+     *
+     * @param {String} strSocialCode
+     * @param {String} strUsername
+     * @param {String} strContractAddr
+     * @param {Number} nAmount
+     * @param {Number} nContractAmount
+     * @returns {Promise<Transaction>}
+     */
+  async removeDID(strSocialCode, strUsername, strContractAddr, nAmount, nContractAmount) {
+      const contractCode = {
+          method: 'remove',
+          arrArguments: [strSocialCode, strUsername],
+      };
+
+      const tx = factory.Transaction.invokeContract(
+          this.stripAddressPrefix(strContractAddr),
+          contractCode,
+          nContractAmount,
+          this._kpFunds.address,
+      );
+      const arrUtxos = await this.getUtxos();
+      const { arrCoins, gathered } = this.gatherInputsForContractCall(arrUtxos, nAmount);
+
+      await this._addInputs(tx, arrCoins);
+
+      let contractDataLength = 31 + JSON.stringify(contractCode).length;
+
+      let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
+      let change = gathered - nAmount - fee;
+      if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+
+      tx.signForContract(this._kpFunds.privateKey);
+
+      return tx;
   }
     async createTxWithFunds({
                                 arrCoins,
