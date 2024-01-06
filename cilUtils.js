@@ -111,7 +111,7 @@ class CilUtils {
      */
     async calcCoinsTxFee(strReceiver, nAmount) {
         const arrUtxos = await this.getUtxos();
-        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nAmount);
         const tx = await this.createTxWithFunds({
             strReceiver,
             amount: nAmount,
