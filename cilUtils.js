@@ -105,22 +105,19 @@ class CilUtils {
     }
 
     /**
-     * @param {String} strReceiver
-     * @param {Number} nAmount
+     * @param {Array} arrReceivers - [[strReceiver, nAmount]]
      * @returns {Promise<Number>} Fee
      */
-    async calcCoinsTxFee(strReceiver, nAmount) {
+    async calcCoinsTxFee(arrReceivers) {
+        const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
         const arrUtxos = await this.getUtxos();
-        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nAmount);
-        const tx = await this.createTxWithFunds({
-            strAddress: strReceiver,
-            amount: nAmount,
+        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+        return await this.getFee({
+            arrReceivers,
             arrCoins,
             gatheredAmount: gathered,
             nOutputs: 2,
         });
-
-        return gathered - (tx._data.payload.outs.reduce((a, c) => a + c.amount, 0))
     }
 
     /**
@@ -300,6 +297,49 @@ class CilUtils {
             }
         }
         return tx
+    }
+
+    async getFee({
+        arrCoins,
+        gatheredAmount,
+        receiverAddr: strAddress,
+        amount: nAmountToSend,
+        arrReceivers,
+        manualFee,
+        nConciliumId,
+    }) {
+        await this._loadedPromise;
+
+        if (!arrReceivers) {
+            arrReceivers = [[strAddress, nAmountToSend]];
+        }
+
+        let nTotalSent = 0;
+        const tx = new factory.Transaction();
+        await this._addInputs(tx, arrCoins);
+
+        for (let [strAddr, nAmount] of arrReceivers) {
+            nTotalSent += nAmount;
+            strAddr = this.stripAddressPrefix(strAddr);
+
+            // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
+            for (let i = 0; i < numOfOutputs; i++) {
+                tx.addReceiver(parseInt(nAmount / numOfOutputs), Buffer.from(strAddr, 'hex'));
+            }
+        }
+
+        // ConciliumId
+        if (nConciliumId) tx.conciliumId = nConciliumId;
+
+        // сдача есть?
+        let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length, true);
+        let change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
+        if (change > 0) {
+            fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true);
+            change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
+        }
+
+        return change
     }
 
     /**
