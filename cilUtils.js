@@ -101,7 +101,7 @@ class CilUtils {
             nOutputs: 1,
         });
 
-        return tx;
+        return {tx, gathered, arrCoins};
     }
 
     /**
