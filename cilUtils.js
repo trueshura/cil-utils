@@ -304,6 +304,7 @@ class CilUtils {
         gatheredAmount,
         receiverAddr: strAddress,
         amount: nAmountToSend,
+        nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
         arrReceivers,
         manualFee,
         nConciliumId,
