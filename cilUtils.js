@@ -118,7 +118,7 @@ class CilUtils {
             nConciliumId,
             arrCoins,
             gatheredAmount: gathered,
-            nOutputs: 1,
+            nOutputs: 2,
         });
 
         return gathered - (tx._data.payload.outs.reduce((a, c) => a + c.amount, 0))
