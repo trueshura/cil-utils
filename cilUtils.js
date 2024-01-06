@@ -105,19 +105,11 @@ class CilUtils {
     }
 
     /**
-     * @param {Array} arrReceivers - [[strReceiver, nAmount]]
+     * @param {Transaction} tx
      * @returns {Promise<Number>} Fee
      */
-    async calcCoinsTxFee(arrReceivers) {
-        const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
-        const arrUtxos = await this.getUtxos();
-        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
-        return await this.getFee({
-            arrReceivers,
-            arrCoins,
-            gatheredAmount: gathered,
-            nOutputs: 2,
-        });
+    async calcCoinsTxFee(tx) {
+        return this._estimateTxFee(tx._data.payload.ins.length, tx._data.payload.outs.length, true);
     }
 
     /**
@@ -297,50 +289,6 @@ class CilUtils {
             }
         }
         return tx
-    }
-
-    async getFee({
-        arrCoins,
-        gatheredAmount,
-        receiverAddr: strAddress,
-        amount: nAmountToSend,
-        nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
-        arrReceivers,
-        manualFee,
-        nConciliumId,
-    }) {
-        await this._loadedPromise;
-
-        if (!arrReceivers) {
-            arrReceivers = [[strAddress, nAmountToSend]];
-        }
-
-        let nTotalSent = 0;
-        const tx = new factory.Transaction();
-        await this._addInputs(tx, arrCoins);
-
-        for (let [strAddr, nAmount] of arrReceivers) {
-            nTotalSent += nAmount;
-            strAddr = this.stripAddressPrefix(strAddr);
-
-            // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
-            for (let i = 0; i < numOfOutputs; i++) {
-                tx.addReceiver(parseInt(nAmount / numOfOutputs), Buffer.from(strAddr, 'hex'));
-            }
-        }
-
-        // ConciliumId
-        if (nConciliumId) tx.conciliumId = nConciliumId;
-
-        // сдача есть?
-        let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length, true);
-        let change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
-        if (change > 0) {
-            fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true);
-            change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
-        }
-
-        return change
     }
 
     /**
