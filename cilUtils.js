@@ -101,7 +101,27 @@ class CilUtils {
             nOutputs: 1,
         });
 
-        return {tx, gathered, arrCoins};
+        return tx;
+    }
+
+    /**
+     * @param {Array} arrReceivers - [[strReceiver, nAmount]]
+     * @param {Number} nConciliumId
+     * @returns {Promise<Number>} Fee
+     */
+    async calcCoinsTxFee(arrReceivers, nConciliumId = 1) {
+        const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
+        const arrUtxos = await this.getUtxos();
+        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+        const tx = await this.createTxWithFunds({
+            arrReceivers,
+            nConciliumId,
+            arrCoins,
+            gatheredAmount: gathered,
+            nOutputs: 1,
+        });
+
+        return gathered - (tx._data.payload.outs.reduce((a, c) => a + c.amount, 0))
     }
 
     /**
