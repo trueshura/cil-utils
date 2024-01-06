@@ -2,7 +2,7 @@ const Buffer = require('buffer/').Buffer;
 const RPC = require('./misc/rpc-client');
 const axios = require('axios').default;
 const factory = require('./factory');
-const { assert } = require('./misc/misc');
+const {assert} = require('./misc/misc');
 
 const sleep = (delay) => {
     return new Promise(resolve => {
@@ -32,7 +32,7 @@ class CilUtils {
         assert(rpcPort, 'Specify rpcPort');
 
 //    const fClient = rpcPort === 443 ? rpc.client.https : rpc.client.http;
-        this._client = new RPC({ url: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}` });
+        this._client = new RPC({url: rpcAddress, port: rpcPort, auth: `${rpcUser}:${rpcPass}`});
         this._kpFunds = factory.Crypto.keyPairFromPrivate(privateKey);
 
         this._loadedPromise = factory.asyncLoad()
@@ -61,7 +61,7 @@ class CilUtils {
      */
     async getBalance(strAddr) {
         const strAddrToQuery = strAddr || this._kpFunds.address;
-        const { balance } = await this.queryApi('Balance', strAddrToQuery);
+        const {balance} = await this.queryApi('Balance', strAddrToQuery);
         return balance;
     }
 
@@ -92,7 +92,7 @@ class CilUtils {
     async createSendCoinsTx(arrReceivers, nConciliumId = 1) {
         const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
         const arrUtxos = await this.getUtxos();
-        const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+        const {arrCoins, gathered} = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
         const tx = await this.createTxWithFunds({
             arrReceivers,
             nConciliumId,
@@ -140,7 +140,7 @@ class CilUtils {
         tx.conciliumId = nConciliumId;
 
         const arrUtxos = await this.getUtxos();
-        const { arrCoins } = this.gatherInputsForContractCall(arrUtxos);
+        const {arrCoins} = this.gatherInputsForContractCall(arrUtxos);
 
         for (let utxo of arrCoins) {
             tx.addInput(utxo.hash, utxo.nOut);
@@ -150,6 +150,7 @@ class CilUtils {
 
         return tx;
     }
+
     /**
      *
      * @param {String} strSocialCode
@@ -173,7 +174,7 @@ class CilUtils {
             this._kpFunds.address,
         );
         const arrUtxos = await this.getUtxos();
-        const { arrCoins, gathered } = this.gatherInputsForContractCall(arrUtxos, nAmount);
+        const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
 
         await this._addInputs(tx, arrCoins);
 
@@ -187,13 +188,14 @@ class CilUtils {
 
         return tx;
     }
+
     /**
      *
      * @param {String} sID
      * @param {String} strContractAddr
      * @param {Boolean} bCompleted
      */
-    async getDID (sID, strContractAddr, bCompleted = true) {
+    async getDID(sID, strContractAddr, bCompleted = true) {
         return await this.queryRpcMethod('constantMethodCall', {
             'contractAddress': strContractAddr,
             'method': 'resolve',
@@ -201,6 +203,7 @@ class CilUtils {
             'completed': bCompleted
         });
     }
+
     /**
      *
      * @param {String} strSocialCode
@@ -210,33 +213,34 @@ class CilUtils {
      * @param {Number} nContractAmount
      * @returns {Promise<Transaction>}
      */
-  async removeDID(strSocialCode, strUsername, strContractAddr, nAmount, nContractAmount) {
-      const contractCode = {
-          method: 'remove',
-          arrArguments: [strSocialCode, strUsername],
-      };
+    async removeDID(strSocialCode, strUsername, strContractAddr, nAmount, nContractAmount) {
+        const contractCode = {
+            method: 'remove',
+            arrArguments: [strSocialCode, strUsername],
+        };
 
-      const tx = factory.Transaction.invokeContract(
-          this.stripAddressPrefix(strContractAddr),
-          contractCode,
-          nContractAmount,
-          this._kpFunds.address,
-      );
-      const arrUtxos = await this.getUtxos();
-      const { arrCoins, gathered } = this.gatherInputsForContractCall(arrUtxos, nAmount);
+        const tx = factory.Transaction.invokeContract(
+            this.stripAddressPrefix(strContractAddr),
+            contractCode,
+            nContractAmount,
+            this._kpFunds.address,
+        );
+        const arrUtxos = await this.getUtxos();
+        const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
 
-      await this._addInputs(tx, arrCoins);
+        await this._addInputs(tx, arrCoins);
 
-      let contractDataLength = 31 + JSON.stringify(contractCode).length;
+        let contractDataLength = 31 + JSON.stringify(contractCode).length;
 
-      let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
-      let change = gathered - nAmount - fee;
-      if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+        let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
+        let change = gathered - nAmount - fee;
+        if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
 
-      tx.signForContract(this._kpFunds.privateKey);
+        tx.signForContract(this._kpFunds.privateKey);
 
-      return tx;
-  }
+        return tx;
+    }
+
     async createTxWithFunds({
                                 arrCoins,
                                 gatheredAmount,
@@ -253,12 +257,12 @@ class CilUtils {
             arrReceivers = [[strAddress, nAmountToSend]];
         }
 
-        let nTotalSent = 0;
+        let nTotalToSend = 0;
         const tx = new factory.Transaction();
         await this._addInputs(tx, arrCoins);
 
         for (let [strAddr, nAmount] of arrReceivers) {
-            nTotalSent += nAmount;
+            nTotalToSend += nAmount;
             strAddr = this.stripAddressPrefix(strAddr);
 
             // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
@@ -272,10 +276,10 @@ class CilUtils {
 
         // сдача есть?
         let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length, true);
-        let change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
+        let change = gatheredAmount - nTotalToSend - (manualFee ? manualFee : fee);
         if (change > 0) {
             fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true);
-            change = gatheredAmount - nTotalSent - (manualFee ? manualFee : fee);
+            change = gatheredAmount - nTotalToSend - (manualFee ? manualFee : fee);
 
             if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
@@ -288,6 +292,7 @@ class CilUtils {
                 tx.claim(parseInt(i), this._kpFunds.privateKey);
             }
         }
+
         return tx
     }
 
@@ -339,7 +344,7 @@ class CilUtils {
      */
     async getTXList(strAddress, nPage = 0) {
         const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
-        const { txInfoDTOs } = await this.queryApi('Address', strAddrToQuery, { page: nPage });
+        const {txInfoDTOs} = await this.queryApi('Address', strAddrToQuery, {page: nPage});
         return txInfoDTOs;
     }
 
@@ -351,7 +356,7 @@ class CilUtils {
      */
     async getTokensTXList(strAddress, nPage = 0) {
         const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
-        return await this.queryApi('Token/Transactions', strAddrToQuery, { page: nPage });
+        return await this.queryApi('Token/Transactions', strAddrToQuery, {page: nPage});
     }
 
     /**
@@ -361,7 +366,7 @@ class CilUtils {
      * @returns {Promise<void>}
      */
     async sendTx(tx) {
-        await this.queryRpcMethod('sendRawTx', { 'strTx': tx.encode().toString('hex') });
+        await this.queryRpcMethod('sendRawTx', {'strTx': tx.encode().toString('hex')});
     }
 
     /**
@@ -374,7 +379,7 @@ class CilUtils {
         try {
             const strMethod = bContractCall ? 'getTxReceipt' : 'getTx';
             const statusToCheck = bContractCall ? 1 : 'confirmed';
-            const { result } = await this._client.request(strMethod, { strTxHash });
+            const {result} = await this._client.request(strMethod, {strTxHash});
 
             return result && result.status === statusToCheck;
         } catch (e) {
@@ -437,7 +442,7 @@ class CilUtils {
         strAddress = strAddress || this._kpFunds.address;
 
         if (this._apiUrl) return await this.queryApi('Unspent', strAddress);
-        return this.queryRpcMethod('walletListUnspent', { strAddress, bStableOnly: true });
+        return this.queryRpcMethod('walletListUnspent', {strAddress, bStableOnly: true});
     }
 
     stripAddressPrefix(strAddr) {
@@ -517,7 +522,6 @@ class CilUtils {
         const nFee = parseInt(this._getTransferFee() / 1024 * (nEmptyTx + nContractLength + nOutByteSize + nInSize + nSigSize + 2)) + 1;
 
         return nFee;
-
     }
 
     _sleep(nMsec) {
