@@ -113,7 +113,7 @@ class CilUtils {
         const arrUtxos = await this.getUtxos();
         const { arrCoins, gathered } = await this.gatherInputsForAmount(arrUtxos, nAmount);
         const tx = await this.createTxWithFunds({
-            strReceiver,
+            strAddress: strReceiver,
             amount: nAmount,
             arrCoins,
             gatheredAmount: gathered,
