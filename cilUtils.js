@@ -206,7 +206,6 @@ class CilUtils {
     async createTxWithFunds({
                                 arrCoins,
                                 receiverAddr: strAddress,
-                                amount: nAmountToSend,
                                 nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
                                 arrReceivers,
                                 nConciliumId,
@@ -214,11 +213,12 @@ class CilUtils {
         await this._loadedPromise;
 
         if (!arrReceivers) {
-            arrReceivers = [[strAddress, nAmountToSend]];
+            arrReceivers = [];
         }
 
         let nTotalToSend = 0;
         const tx = new factory.Transaction();
+        const nAmountToSend = arrReceivers.reduce((a, [_addr, amt]) => amt + a, 0);
 
         // we will gather inputs now
         const getUTXOs = () => {
@@ -244,7 +244,7 @@ class CilUtils {
                     }
                 }
             }
-            throw new Error(`Not enough balance, required ${nAmountToSend} but available ${collectedAmountNoFee}`);
+            throw new Error(`Not enough balance, required ${nAmountToSend} but available ${collectedAmount}`);
         }
 
         const {utxos, change} = getUTXOs();
