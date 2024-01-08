@@ -244,7 +244,9 @@ class CilUtils {
             fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true);
             change = gatheredAmount - nTotalToSend - (manualFee ? manualFee : fee);
 
-            if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+            const dustLike = fee; // TODO: actually this is true in case we have exactly 1 input. Potentially if we have over 9000 inputs this can lead to high fee values
+
+            if (change > dustLike) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
 
         // for single PK scenario it's allowed to use single claimProof in txSignature
