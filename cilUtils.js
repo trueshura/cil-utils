@@ -153,18 +153,17 @@ class CilUtils {
 
     /**
      *
-     * @param {String} strSocialCode
-     * @param {String} strUsername
-     * @param {String} strAddress
+     * @param {String} sMethod
+     * @param {Array} arrArguments
      * @param {String} strContractAddr
      * @param {Number} nAmount
      * @param {Number} nContractAmount
      * @returns {Promise<Transaction>}
      */
-    async createDIDTX(strSocialCode, strUsername, strAddress, strContractAddr, nAmount, nContractAmount) {
+    async performDIDOperation(sMethod, arrArguments, strContractAddr, nAmount, nContractAmount) {
         const contractCode = {
-            method: 'create',
-            arrArguments: [strSocialCode, strUsername, strAddress],
+            method: sMethod,
+            arrArguments: arrArguments,
         };
 
         const tx = factory.Transaction.invokeContract(
@@ -191,54 +190,18 @@ class CilUtils {
 
     /**
      *
-     * @param {String} sID
+     * @param {String} sMethod
+     * @param {String} arrArguments
      * @param {String} strContractAddr
      * @param {Boolean} bCompleted
      */
-    async getDID(sID, strContractAddr, bCompleted = true) {
+    async getDIDInformation(sMethod, arrArguments, strContractAddr, bCompleted = true) {
         return await this.queryRpcMethod('constantMethodCall', {
             'contractAddress': strContractAddr,
-            'method': 'resolve',
-            'arrArguments': [sID],
+            'method': sMethod,
+            'arrArguments': arrArguments,
             'completed': bCompleted
         });
-    }
-
-    /**
-     *
-     * @param {String} strSocialCode
-     * @param {String} strUsername
-     * @param {String} strContractAddr
-     * @param {Number} nAmount
-     * @param {Number} nContractAmount
-     * @returns {Promise<Transaction>}
-     */
-    async removeDID(strSocialCode, strUsername, strContractAddr, nAmount, nContractAmount) {
-        const contractCode = {
-            method: 'remove',
-            arrArguments: [strSocialCode, strUsername],
-        };
-
-        const tx = factory.Transaction.invokeContract(
-            this.stripAddressPrefix(strContractAddr),
-            contractCode,
-            nContractAmount,
-            this._kpFunds.address,
-        );
-        const arrUtxos = await this.getUtxos();
-        const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
-
-        await this._addInputs(tx, arrCoins);
-
-        let contractDataLength = 31 + JSON.stringify(contractCode).length;
-
-        let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
-        let change = gathered - nAmount - fee;
-        if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
-
-        tx.signForContract(this._kpFunds.privateKey);
-
-        return tx;
     }
 
     async createTxWithFunds({
