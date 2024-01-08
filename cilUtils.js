@@ -92,7 +92,7 @@ class CilUtils {
     async createSendCoinsTx(arrReceivers, nConciliumId = 1) {
         const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
         const arrUtxos = await this.getUtxos();
-        const {arrCoins, gathered} = await this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+        const {arrCoins, gathered} = this.gatherInputsForAmount(arrUtxos, nTotalToSend);
         const tx = await this.createTxWithFunds({
             arrReceivers,
             nConciliumId,
@@ -282,12 +282,12 @@ class CilUtils {
             arrCoins.push(coins);
             if (bUseOnlyOne) {
                 const fee = this._estimateTxFee(1, 2, true);
-                if (coins.amount > amount + fee) return {
+                if (coins.amount >= amount + fee) return {
                     arrCoins: [coins],
                     gathered: coins.amount,
                     skip: arrCoins.length,
                 };
-            } else if (gathered > amount + this._estimateTxFee(arrCoins.length, 2, true)) {
+            } else if (gathered >= amount + this._estimateTxFee(arrCoins.length, 2, true)) {
                 return {
                     arrCoins,
                     gathered,
