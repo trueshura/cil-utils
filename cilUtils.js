@@ -92,12 +92,11 @@ class CilUtils {
     async createSendCoinsTx(arrReceivers, nConciliumId = 1) {
         const nTotalToSend = arrReceivers.reduce((accum, [, nAmountToSend]) => accum + nAmountToSend, 0);
         const arrUtxos = await this.getUtxos();
-        const {arrCoins, gathered} = this.gatherInputsForAmount(arrUtxos, nTotalToSend);
+        // const {arrCoins, gathered} = this.gatherInputsForAmount(arrUtxos, nTotalToSend);
         const tx = await this.createTxWithFunds({
             arrReceivers,
             nConciliumId,
-            arrCoins,
-            gatheredAmount: gathered,
+            arrCoins: arrUtxos,
             nOutputs: 1,
         });
 
@@ -206,12 +205,10 @@ class CilUtils {
 
     async createTxWithFunds({
                                 arrCoins,
-                                gatheredAmount,
                                 receiverAddr: strAddress,
                                 amount: nAmountToSend,
                                 nOutputs: numOfOutputs = NUM_OF_OUTPUTS,
                                 arrReceivers,
-                                manualFee,
                                 nConciliumId,
                             }) {
         await this._loadedPromise;
