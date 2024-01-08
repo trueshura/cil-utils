@@ -215,15 +215,22 @@ class CilUtils {
         if (!arrReceivers) {
             arrReceivers = [];
         }
+        const sendMaxAmount = arrReceivers.length === 1 && arrReceivers[0][0] === -1;
 
-        let nTotalToSend = 0;
         const tx = new factory.Transaction();
-        const nAmountToSend = arrReceivers.reduce((a, [_addr, amt]) => amt + a, 0);
+        const nAmountToSend =
+            sendMaxAmount
+                ? arrCoins.reduce((a, {amount}) => a + amount, 0)
+                : arrReceivers.reduce((a, [_addr, amt]) => amt + a, 0);
 
         // we will gather inputs now
         const getUTXOs = () => {
             const usedUTXOs = [];
             let collectedAmount = 0;
+
+            if (sendMaxAmount) {
+                return {hasChange: false, utxos: arrCoins};
+            }
 
             for (const utxo of arrCoins) {
                 usedUTXOs.push(utxo);
@@ -234,36 +241,39 @@ class CilUtils {
                 if (consumedAmount <= collectedAmount && collectedAmount - consumedAmount < estimatedFeeSingleOutput) {
                     // no change
                     // TODO: actually this is true in case we have exactly 1 input. Potentially if we have over 9000 inputs this can lead to high fee values
-                    return {change: 0, utxos: usedUTXOs};
+                    return {hasChange: false, utxos: usedUTXOs};
                 } else if (consumedAmount < collectedAmount) {
                     // validate fee for change
                     const estimatedFeeTwoOuts = this._estimateTxFee(usedUTXOs, 2, true);
                     if (nAmountToSend + estimatedFeeTwoOuts <= collectedAmount) {
                         // all required utxos collected
-                        return {change, utxos: usedUTXOs};
+                        return {hasChange: true, utxos: usedUTXOs};
                     }
                 }
             }
             throw new Error(`Not enough balance, required ${nAmountToSend} but available ${collectedAmount}`);
         }
 
-        const {utxos, change} = getUTXOs();
+        const {utxos, hasChange} = getUTXOs();
         await this._addInputs(tx, utxos);
 
         for (let [strAddr, nAmount] of arrReceivers) {
-            nTotalToSend += nAmount;
             strAddr = this.stripAddressPrefix(strAddr);
 
             // разобьем сумму на numOfOutputs выходов, чтобы не блокировало переводы
             for (let i = 0; i < numOfOutputs; i++) {
-                tx.addReceiver(parseInt(nAmount / numOfOutputs), Buffer.from(strAddr, 'hex'));
+                tx.addReceiver(Math.floor(Number(nAmount) / numOfOutputs), Buffer.from(strAddr, 'hex'));
             }
         }
 
         // ConciliumId
         if (nConciliumId) tx.conciliumId = nConciliumId;
 
-        if (change > 0) {
+        const fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + hasChange ? 1 : 0, true);
+
+        if (hasChange) {
+            const totalCollected = utxos.reduce((a, {amount}) => a + amount, 0);
+            const change = totalCollected - nAmountToSend - fee;
             tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
 
