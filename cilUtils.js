@@ -215,7 +215,7 @@ class CilUtils {
         if (!arrReceivers) {
             arrReceivers = [];
         }
-        const sendMaxAmount = arrReceivers.length === 1 && arrReceivers[0][0] === -1;
+        const sendMaxAmount = arrReceivers.length === 1 && arrReceivers[0][1] === -1;
 
         const tx = new factory.Transaction();
         const nAmountToSend =
