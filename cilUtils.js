@@ -222,7 +222,36 @@ class CilUtils {
 
         let nTotalToSend = 0;
         const tx = new factory.Transaction();
-        await this._addInputs(tx, arrCoins);
+
+        // we will gather inputs now
+        const getUTXOs = () => {
+            const usedUTXOs = [];
+            let collectedAmount = 0;
+
+            for (const utxo of arrCoins) {
+                usedUTXOs.push(utxo);
+                collectedAmount += utxo.amount;
+
+                const estimatedFeeSingleOutput = this._estimateTxFee(usedUTXOs.length, 1, true);
+                const consumedAmount = nAmountToSend + estimatedFeeSingleOutput;
+                if (consumedAmount <= collectedAmount && collectedAmount - consumedAmount < estimatedFeeSingleOutput) {
+                    // no change
+                    // TODO: actually this is true in case we have exactly 1 input. Potentially if we have over 9000 inputs this can lead to high fee values
+                    return {change: 0, utxos: usedUTXOs};
+                } else if (consumedAmount < collectedAmount) {
+                    // validate fee for change
+                    const estimatedFeeTwoOuts = this._estimateTxFee(usedUTXOs, 2, true);
+                    if (nAmountToSend + estimatedFeeTwoOuts <= collectedAmount) {
+                        // all required utxos collected
+                        return {change, utxos: usedUTXOs};
+                    }
+                }
+            }
+            throw new Error(`Not enough balance, required ${nAmountToSend} but available ${collectedAmountNoFee}`);
+        }
+
+        const {utxos, change} = getUTXOs();
+        await this._addInputs(tx, utxos);
 
         for (let [strAddr, nAmount] of arrReceivers) {
             nTotalToSend += nAmount;
@@ -237,16 +266,8 @@ class CilUtils {
         // ConciliumId
         if (nConciliumId) tx.conciliumId = nConciliumId;
 
-        // сдача есть?
-        let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length, true);
-        let change = gatheredAmount - nTotalToSend - (manualFee ? manualFee : fee);
         if (change > 0) {
-            fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true);
-            change = gatheredAmount - nTotalToSend - (manualFee ? manualFee : fee);
-
-            const dustLike = fee; // TODO: actually this is true in case we have exactly 1 input. Potentially if we have over 9000 inputs this can lead to high fee values
-
-            if (change > dustLike) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+            tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
 
         // for single PK scenario it's allowed to use single claimProof in txSignature
