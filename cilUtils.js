@@ -244,7 +244,7 @@ class CilUtils {
                     return {hasChange: false, utxos: usedUTXOs};
                 } else if (consumedAmount < collectedAmount) {
                     // validate fee for change
-                    const estimatedFeeTwoOuts = this._estimateTxFee(usedUTXOs, 2, true);
+                    const estimatedFeeTwoOuts = this._estimateTxFee(usedUTXOs.length, 2, true);
                     if (nAmountToSend + estimatedFeeTwoOuts <= collectedAmount) {
                         // all required utxos collected
                         return {hasChange: true, utxos: usedUTXOs};
@@ -256,6 +256,9 @@ class CilUtils {
 
         const {utxos, hasChange} = getUTXOs();
         await this._addInputs(tx, utxos);
+        if (sendMaxAmount) {
+            arrReceivers[0][1] = nAmountToSend;
+        }
 
         for (let [strAddr, nAmount] of arrReceivers) {
             strAddr = this.stripAddressPrefix(strAddr);
