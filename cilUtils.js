@@ -273,7 +273,7 @@ class CilUtils {
         // ConciliumId
         if (nConciliumId) tx.conciliumId = nConciliumId;
 
-        const fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + hasChange ? 1 : 0, true);
+        const fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + (hasChange ? 1 : 0), true);
         const txDebug = {
             tx,
             fee,
