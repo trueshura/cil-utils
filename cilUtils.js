@@ -238,7 +238,7 @@ class CilUtils {
 
                 const estimatedFeeSingleOutput = this._estimateTxFee(usedUTXOs.length, 1, true);
                 const consumedAmount = nAmountToSend + estimatedFeeSingleOutput;
-                if (consumedAmount <= collectedAmount && collectedAmount - consumedAmount < estimatedFeeSingleOutput) {
+                if (consumedAmount <= collectedAmount && collectedAmount - consumedAmount <= estimatedFeeSingleOutput) {
                     // no change
                     // TODO: actually this is true in case we have exactly 1 input. Potentially if we have over 9000 inputs this can lead to high fee values
                     return {hasChange: false, utxos: usedUTXOs};
