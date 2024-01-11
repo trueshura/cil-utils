@@ -451,7 +451,7 @@ class CilUtils {
         strAddress = strAddress || this._kpFunds.address;
 
         if (this._apiUrl) return await this.queryApi('Unspent', strAddress);
-        return this.queryRpcMethod('walletListUnspent', {strAddress, bStableOnly: true});
+        return this.queryRpcMethod('walletListUnspent', {strAddress, bStableOnly: false});
     }
 
     stripAddressPrefix(strAddr) {
