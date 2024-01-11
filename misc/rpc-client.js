@@ -1,5 +1,5 @@
 const buffer = require('buffer/').Buffer;
-const axios = require('axios');
+const axios = require('axios').default;
 const {assert} = require('./misc');
 module.exports = class Client {
     constructor({url, port, auth}) {
