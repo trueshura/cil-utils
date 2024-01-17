@@ -16,7 +16,7 @@ async function main() {
 
     // Обратить внимание, что тут тестовая сеть
     // Для нескольких колешьков нужно будет создать несколько инстансов CilUtils
-    privateKey: kp.privateKey,
+    privateKey: '5fa64c78148ebcfc7048a4a22caaacfe5b12fac4f62d3fcdffc994bf8edb2a59',
     apiUrl: 'https://test-explorer.ubikiri.com/api/',
     rpcPort: 443,
     rpcAddress: 'https://rpc-dv-1.ubikiri.com/',
@@ -89,4 +89,57 @@ async function main() {
 
   // Не забыть отправить ее в сеть
   await utils.sendTx(txTokens);
+
+  const didUtils = new CilUtils({
+    privateKey: '4e0adbf70b332c40378ac9d738aaa8d8d1cadabe41dace19c12444cbf2506334',
+    apiUrl: 'https://test-explorer.ubikiri.com/api/',
+    rpcPort: 443,
+    rpcAddress: 'https://rpc-dv-1.ubikiri.com/',
+    rpcUser: 'cilTest',
+    rpcPass: 'd49c1d2735536baa4de1cc6'
+  });
+
+  await didUtils.asyncLoaded();
+
+  // добавление нового провайдера DID
+  const didProviderTX = await didUtils.performDIDOperation(
+      'addProvider',
+      ['tw'],
+      '44abd42dcd3d3def73dbf9aac211d9a966e653b4',
+      200000,
+      20000,
+      1
+  )
+  await didUtils.sendTx(didProviderTX);
+  await didUtils.waitTxDoneExplorer(didProviderTX.getHash(), 600, false);
+  console.log(didProviderTX.getHash(), 'Хэш транзакции (добавление провайдера DID)');
+
+  // создание привязки DID
+  const createDIDTX = await didUtils.performDIDOperation(
+      'create',
+      ['tw', 'trueshura', '9dd718fff5671d6cff6be4b15fde1ea286528ea0'],
+      '44abd42dcd3d3def73dbf9aac211d9a966e653b4',
+      200000,
+      20000,
+      1
+  )
+  await didUtils.sendTx(createDIDTX);
+  await didUtils.waitTxDoneExplorer(createDIDTX.getHash(), 600, false);
+  console.log(createDIDTX.getHash(), 'Хэш транзакции (привязка DID)');
+
+  // проверка привязки DID
+  const did = await didUtils.getDIDInformation(
+      'resolve',
+      ['trueshura'],
+      '44abd42dcd3d3def73dbf9aac211d9a966e653b4',
+  )
+  console.log(did, 'Информация о привязке DID');
+
+  // доступные DID провайдеры
+  const didProviders = await didUtils.getDIDInformation(
+      'getProviders',
+      [],
+      '44abd42dcd3d3def73dbf9aac211d9a966e653b4',
+  )
+  console.log(didProviders, 'доступные DID провайдеры');
 }
