@@ -158,6 +158,12 @@ class CilUtils {
       arrReceivers = [[strAddress, nAmountToSend]];
     }
 
+    if(arrReceivers.length === 1 && arrReceivers[0][1] === -1){
+      // sweep scenario
+      arrReceivers[0][1] = gatheredAmount - this._estimateTxFee(arrCoins.length, 1, true);
+      numOfOutputs=1;
+    }
+
     let nTotalSent = 0;
     const tx = new factory.Transaction();
     await this._addInputs(tx, arrCoins);

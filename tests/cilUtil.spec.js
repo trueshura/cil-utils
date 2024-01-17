@@ -212,6 +212,41 @@ describe('CilUtils', () => {
       assert.equal(tx.encode().toString('hex'), strEncodedTx);
     });
 
+    it('should createTxWithFunds (sweep scenario)', async () => {
+      const amount = 1e4;
+      const arrCoins = [
+        {
+          "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
+          "nOut": 1,
+          "amount": amount,
+          "isStable": true
+        },
+        {
+          "hash": "21e8bdbee170964d36fcabe4e071bc14933551b9c2b031770ce73ba973bc4dd7",
+          "nOut": 1,
+          "amount": amount,
+          "isStable": true
+        }];
+
+      const tx = await utils.createTxWithFunds({
+        arrCoins,
+        gatheredAmount: arrCoins.reduce((accum, current) => accum + current.amount, 0),
+        // nOutputs will be ignored in sweep scenario
+        nOutputs: 10,
+        arrReceivers: [
+          ['Ux1ac4cfe96bd4e2a3df3d5115b75557b9f05d4b86', -1],
+        ]
+      });
+
+      assert.isOk(tx);
+      assert.equal(tx.inputs.length, 2);
+      assert.equal(tx.outputs.length, 1);
+
+      // it should exclude change
+      assert.equal(tx.amountOut(), 2 * amount - utils._estimateTxFee(2, 1, true));
+      console.log(2 * amount - utils._estimateTxFee(2, 1, true));
+    });
+
     it('should createSendCoinsTx (two receivers + change)', async () => {
       const amount = 1e5;
       const arrCoins = [
