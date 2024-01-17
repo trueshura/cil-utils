@@ -466,8 +466,7 @@ class CilUtils {
         this._kpFunds.address,
     );
 
-    tx.conciliumId = nConciliumId;
-
+    if (nConciliumId) tx.conciliumId = nConciliumId;
 
     const arrUtxos = await this.getUtxos();
     const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
