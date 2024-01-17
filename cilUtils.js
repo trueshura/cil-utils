@@ -150,64 +150,6 @@ class CilUtils {
         return tx;
     }
 
-  /**
-   *
-   * @param {String} sMethod
-   * @param {Array} arrArguments
-   * @param {String} strContractAddr
-   * @param {Number} nAmount
-   * @param {Number} nContractAmount
-   * @param {Number} nConciliumId
-   * @returns {Promise<Transaction>}
-   */
-  async performDIDOperation(sMethod, arrArguments, strContractAddr, nAmount, nContractAmount, nConciliumId = 1) {
-    const contractCode = {
-      method: sMethod,
-      arrArguments: arrArguments,
-    };
-
-    const tx = factory.Transaction.invokeContract(
-        this.stripAddressPrefix(strContractAddr),
-        contractCode,
-        nContractAmount,
-        this._kpFunds.address,
-    );
-
-    tx.conciliumId = nConciliumId;
-
-
-    const arrUtxos = await this.getUtxos();
-    const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
-
-    await this._addInputs(tx, arrCoins);
-
-    let contractDataLength = 31 + JSON.stringify(contractCode).length;
-
-    let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
-    let change = gathered - nAmount - fee;
-    if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
-
-    tx.signForContract(this._kpFunds.privateKey);
-
-    return tx;
-  }
-
-    /**
-     *
-     * @param {String} sMethod
-     * @param {String} arrArguments
-     * @param {String} strContractAddr
-     * @param {Boolean} bCompleted
-     */
-    async getDIDInformation(sMethod, arrArguments, strContractAddr, bCompleted = true) {
-        return await this.queryRpcMethod('constantMethodCall', {
-            'contractAddress': strContractAddr,
-            'method': sMethod,
-            'arrArguments': arrArguments,
-            'completed': bCompleted
-        });
-    }
-
     async createTxWithFunds({
                                 arrCoins,
                                 receiverAddr: strAddress,
@@ -337,29 +279,6 @@ class CilUtils {
 
     gatherInputsForContractCall(arrUtxos, nFee, bUseOnlyOne = false, bBigFirst = true) {
         return this.gatherInputsForAmount(arrUtxos, nFee || this._nFeeInvoke, bUseOnlyOne, bBigFirst);
-    }
-
-    /**
-     *
-     * @param {String} strAddress - address to query. if omitted - will use stored wallet
-     * @param {Number} nPage
-     * @returns {Promise<*>} {hash, timestamp, inputs, outputs, value, spending}
-     */
-    async getTXList(strAddress, nPage = 0) {
-        const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
-        const {txInfoDTOs} = await this.queryApi('Address', strAddrToQuery, {page: nPage});
-        return txInfoDTOs;
-    }
-
-    /**
-     *
-     * @param {String} strAddress - address to query. if omitted - will use stored wallet
-     * @param {Number} nPage
-     * @returns {Promise<*>} {transactionHash, symbol, from, to, quantity, timestamp}
-     */
-    async getTokensTXList(strAddress, nPage = 0) {
-        const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
-        return await this.queryApi('Token/Transactions', strAddrToQuery, {page: nPage});
     }
 
     /**
@@ -538,6 +457,86 @@ class CilUtils {
         } catch (e) {
             return false;
         }
+    }
+
+    /**
+     *
+     * @param {String} strAddress - address to query. if omitted - will use stored wallet
+     * @param {Number} nPage
+     * @returns {Promise<*>} {hash, timestamp, inputs, outputs, value, spending}
+     */
+    async getTXList(strAddress, nPage = 0) {
+        const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
+        const {txInfoDTOs} = await this.queryApi('Address', strAddrToQuery, {page: nPage});
+        return txInfoDTOs;
+    }
+
+    /**
+     *
+     * @param {String} strAddress - address to query. if omitted - will use stored wallet
+     * @param {Number} nPage
+     * @returns {Promise<*>} {transactionHash, symbol, from, to, quantity, timestamp}
+     */
+    async getTokensTXList(strAddress, nPage = 0) {
+        const strAddrToQuery = strAddress ? strAddress : this._kpFunds.address;
+        return await this.queryApi('Token/Transactions', strAddrToQuery, {page: nPage});
+    }
+    /**
+     *
+     * @param {String} sMethod
+     * @param {Array} arrArguments
+     * @param {String} strContractAddr
+     * @param {Number} nAmount
+     * @param {Number} nContractAmount
+     * @param {Number} nConciliumId
+     * @returns {Promise<Transaction>}
+     */
+    async performDIDOperation(sMethod, arrArguments, strContractAddr, nAmount, nContractAmount, nConciliumId = 1) {
+        const contractCode = {
+            method: sMethod,
+            arrArguments: arrArguments,
+        };
+
+        const tx = factory.Transaction.invokeContract(
+            this.stripAddressPrefix(strContractAddr),
+            contractCode,
+            nContractAmount,
+            this._kpFunds.address,
+        );
+
+        tx.conciliumId = nConciliumId;
+
+
+        const arrUtxos = await this.getUtxos();
+        const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
+
+        await this._addInputs(tx, arrCoins);
+
+        let contractDataLength = 31 + JSON.stringify(contractCode).length;
+
+        let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
+        let change = gathered - nAmount - fee;
+        if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+
+        tx.signForContract(this._kpFunds.privateKey);
+
+        return tx;
+    }
+
+    /**
+     *
+     * @param {String} sMethod
+     * @param {String} arrArguments
+     * @param {String} strContractAddr
+     * @param {Boolean} bCompleted
+     */
+    async getDIDInformation(sMethod, arrArguments, strContractAddr, bCompleted = true) {
+        return await this.queryRpcMethod('constantMethodCall', {
+            'contractAddress': strContractAddr,
+            'method': sMethod,
+            'arrArguments': arrArguments,
+            'completed': bCompleted
+        });
     }
 }
 
