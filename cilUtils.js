@@ -279,21 +279,10 @@ class CilUtils {
         if (nConciliumId) tx.conciliumId = nConciliumId;
 
         const fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + (hasChange ? 1 : 0), true);
-        // const txDebug = {
-        //     tx,
-        //     fee,
-        //     hasChange,
-        //     sendMaxAmount,
-        //     utxos,
-        //     totalCollected: utxos.reduce((a, {amount}) => a + amount, 0),
-        //     arrReceivers,
-        // };
 
         if (hasChange) {
             const totalCollected = utxos.reduce((a, {amount}) => a + amount, 0);
             const change = totalCollected - nAmountToSend - fee;
-//            txDebug.totalCollected = totalCollected;
-//            txDebug.fee = fee;
             tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
         }
 
