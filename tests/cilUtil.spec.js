@@ -230,7 +230,6 @@ describe('CilUtils', () => {
 
       const tx = await utils.createTxWithFunds({
         arrCoins,
-        gatheredAmount: arrCoins.reduce((accum, current) => accum + current.amount, 0),
         // nOutputs will be ignored in sweep scenario
         nOutputs: 10,
         arrReceivers: [
