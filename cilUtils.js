@@ -443,6 +443,62 @@ class CilUtils {
       return false;
     }
   }
+  /**
+   *
+   * @param {String} sMethod
+   * @param {Array} arrArguments
+   * @param {String} strContractAddr
+   * @param {Number} nAmount
+   * @param {Number} nContractAmount
+   * @param {Number} nConciliumId
+   * @returns {Promise<Transaction>}
+   */
+  async performDIDOperation(sMethod, arrArguments, strContractAddr, nAmount, nContractAmount, nConciliumId = 1) {
+    const contractCode = {
+      method: sMethod,
+      arrArguments: arrArguments,
+    };
+
+    const tx = factory.Transaction.invokeContract(
+        this.stripAddressPrefix(strContractAddr),
+        contractCode,
+        nContractAmount,
+        this._kpFunds.address,
+    );
+
+    if (nConciliumId) tx.conciliumId = nConciliumId;
+
+    const arrUtxos = await this.getUtxos();
+    const {arrCoins, gathered} = this.gatherInputsForContractCall(arrUtxos, nAmount);
+
+    await this._addInputs(tx, arrCoins);
+
+    let contractDataLength = 31 + JSON.stringify(contractCode).length;
+
+    let fee = this._estimateTxFee(tx.inputs.length, tx.outputs.length + 1, true, contractDataLength);
+    let change = gathered - nAmount - fee;
+    if (change > 0) tx.addReceiver(change, Buffer.from(this._kpFunds.address, 'hex'));
+
+    tx.signForContract(this._kpFunds.privateKey);
+
+    return tx;
+  }
+
+  /**
+   *
+   * @param {String} sMethod
+   * @param {String} arrArguments
+   * @param {String} strContractAddr
+   * @param {Boolean} bCompleted
+   */
+  async getDIDInformation(sMethod, arrArguments, strContractAddr, bCompleted = true) {
+    return await this.queryRpcMethod('constantMethodCall', {
+      'contractAddress': strContractAddr,
+      'method': sMethod,
+      'arrArguments': arrArguments,
+      'completed': bCompleted
+    });
+  }
 }
 
 module.exports = CilUtils;

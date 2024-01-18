@@ -533,4 +533,92 @@ describe('CilUtils', () => {
     return assert.isRejected(utils.getUtxos());
   });
 
+  describe('DID operations', () => {
+    let didUtils;
+
+    beforeEach(async () => {
+      didUtils = new CilUtils({
+        privateKey: '0000000000000000000000000000000000000000000000000000000000000000',
+        apiUrl: 'https://test-explorer.example.com/api/',
+        rpcPort: 443,
+        rpcAddress: 'https://rpc-dv-1.example.com/',
+        rpcUser: 'test',
+        rpcPass: 'superpassword'
+      });
+      await didUtils.asyncLoaded();
+    })
+
+    it('addProvider', async () => {
+
+      const fakeUtxos = [
+        {
+          "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
+          "nOut": 1,
+          "amount": 499986000,
+          "isStable": true
+        },
+        {
+          "hash": "21e8bdbee170964d36fcabe4e071bc14933551b9c2b031770ce73ba973bc4dd7",
+          "nOut": 1,
+          "amount": 499986000,
+          "isStable": true
+        }];
+      const ownAddress = '0d5ab318f38a8e4faed56d625a677ba481c9022b';
+
+      sinon.stub(didUtils._kpFunds, 'address').value(ownAddress)
+      didUtils.queryApi = sinon.fake.resolves(fakeUtxos);
+
+      const tx = await didUtils.performDIDOperation(
+        'addProvider',
+        ['tw'],
+        '44abd42dcd3d3def73dbf9aac211d9a966e653b4',
+        200000,
+        20000,
+        1
+      );
+
+      assert.isOk(tx);
+      assert.equal(tx.inputs.length, 1);
+      assert.oneOf(tx.inputs[0].txHash.toString('hex'), fakeUtxos.map(({ hash }) => hash));
+      assert.equal(tx.outputs.length, 2);
+      assert.match(tx.outputs[0].contractCode, /addProvider/); // contract calling
+      assert.equal(tx.outputs[1].receiverAddr.toString('hex'), ownAddress); // change
+    })
+    it('create', async () => {
+      const fakeUtxos = [
+        {
+          "hash": "13252b7f61784f4d45740c38b4bbf15629e066b198c70b54a05af6f006b5b6c2",
+          "nOut": 1,
+          "amount": 499986000,
+          "isStable": true
+        },
+        {
+          "hash": "21e8bdbee170964d36fcabe4e071bc14933551b9c2b031770ce73ba973bc4dd7",
+          "nOut": 1,
+          "amount": 499986000,
+          "isStable": true
+        }];
+      const ownAddress = '0d5ab318f38a8e4faed56d625a677ba481c9022b';
+
+      sinon.stub(didUtils._kpFunds, 'address').value(ownAddress)
+      didUtils.queryApi = sinon.fake.resolves(fakeUtxos);
+
+      const tx = await didUtils.performDIDOperation(
+        'create',
+        ['tw', 'trueshura', '9dd718fff5671d6cff6be4b15fde1ea286528ea0'],
+        '44abd42dcd3d3def73dbf9aac211d9a966e653b4',
+        200000,
+        20000,
+        1
+      );
+
+      assert.isOk(tx);
+      assert.equal(tx.inputs.length, 1);
+      assert.oneOf(tx.inputs[0].txHash.toString('hex'), fakeUtxos.map(({ hash }) => hash));
+      assert.equal(tx.outputs.length, 2);
+      assert.match(tx.outputs[0].contractCode, /create.*tw.*trueshura.*8ea0/); // contract calling
+      assert.equal(tx.outputs[1].receiverAddr.toString('hex'), ownAddress); // change
+    })
+  })
+
 });
