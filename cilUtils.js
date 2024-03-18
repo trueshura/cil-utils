@@ -369,7 +369,26 @@ class CilUtils {
   }
 
   static prepareForStringifyObject(obj) {
-    return factory.utils.prepareForStringifyObject(obj);
+    if (!(obj instanceof Object)) return obj;
+
+    if (Buffer.isBuffer(obj)) return obj.toString('hex');
+    if (Array.isArray(obj)) return obj.map(elem => this.prepareForStringifyObject(elem));
+
+    const resultObject = {};
+    for (let key of Object.keys(obj)) {
+      if (typeof obj[key] === 'function' || typeof obj[key] === 'undefined') continue;
+
+      if (Buffer.isBuffer(obj[key])) {
+        resultObject[key] = obj[key].toString('hex');
+      } else if (Array.isArray(obj[key])) {
+        resultObject[key] = this.prepareForStringifyObject(obj[key]);
+      } else if (obj[key] instanceof Object) {
+        resultObject[key] = this.prepareForStringifyObject(obj[key]);
+      } else {
+        resultObject[key] = obj[key];
+      }
+    }
+    return resultObject;
   }
 
   async queryApi(endpoint, strParam, objQueryParams) {
