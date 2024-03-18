@@ -19,7 +19,7 @@ async function main() {
     privateKey: kp.privateKey,
     apiUrl: 'https://test-explorer.ubikiri.com/api/',
     rpcPort: 443,
-    rpcAddress: 'https://rpc-dv-1.ubikiri.com/',
+    rpcAddress: 'rpc-dv-1.ubikiri.com',
     rpcUser: 'cilTest',
     rpcPass: 'd49c1d2735536baa4de1cc6'
   });
@@ -34,7 +34,7 @@ async function main() {
 //  console.dir(rpcResult, {colors: true, depth: null});
 
   // existed token
-  const objTokenData = await utils.getTokenBalance('0d5ab318f38a8e4faed56d625a677ba481c9022b', 'WAF');
+  const objTokenData = await utils.getTokenBalance('0d5ab318f38a8e4faed56d625a677ba481c9022b', 'TST-EM');
   console.dir(objTokenData, {colors: true, depth: null});
 
   // non-existed token

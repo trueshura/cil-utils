@@ -9,6 +9,9 @@ module.exports = {
     module: {
         rules: [{test: /\.txt$/, use: 'raw-loader'}]
     },
+  resolve: {
+    fallback: {"url": false}
+  },
     devServer: {
         static: {
             directory: path.join(__dirname, 'dist')
